@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<doc>
+<assembly><name>PodmanFUI.Domain</name></assembly>
+<members>
+<member name="M:PodmanFUI.Domain.IPodmanSocketClient.GetSystemInfoAsync">
+<summary>
+ Lấy thông tin tổng hợp của Podman Engine từ endpoint GET /v4.0.0/libpod/info
+</summary>
+</member>
+<member name="T:PodmanFUI.Domain.IPodmanSocketClient">
+<summary>
+ Giao diện trừu tượng giao tiếp với Podman Unix Domain Socket
+</summary>
+</member>
+<member name="T:PodmanFUI.Domain.Errors.ConnectionError.DeserializationError">
+<summary>
+ ERR_JSON_PARSE: Không thể phân giải cấu trúc JSON từ API /info
+</summary>
+</member>
+<member name="T:PodmanFUI.Domain.Errors.ConnectionError.Timeout">
+<summary>
+ ERR_CONN_TIMEOUT: Quá thời gian chờ kết nối (Timeout 10s)
+</summary>
+</member>
+<member name="T:PodmanFUI.Domain.Errors.ConnectionError.HttpFailure">
+<summary>
+ ERR_HTTP_500 / HTTP Errors: Lỗi phản hồi HTTP từ Libpod API
+</summary>
+</member>
+<member name="T:PodmanFUI.Domain.Errors.ConnectionError.AccessDenied">
+<summary>
+ ERR_SOCK_403: Không có quyền đọc/ghi vào socket vật lý
+</summary>
+</member>
+<member name="T:PodmanFUI.Domain.Errors.ConnectionError.SocketNotFound">
+<summary>
+ ERR_SOCK_404: File .sock không tồn tại
+</summary>
+</member>
+<member name="T:PodmanFUI.Domain.Errors.ConnectionError">
+<summary>
+ Phân loại chi tiết các lỗi kết nối và phân giải dữ liệu từ Podman Unix Domain Socket
+</summary>
+</member>
+<member name="T:PodmanFUI.Domain.Models.SystemInfo">
+<summary>
+ Dữ liệu tổng hợp môi trường động cơ Podman
+</summary>
+</member>
+<member name="T:PodmanFUI.Domain.Models.VersionInfo">
+<summary>
+ Thông tin phiên bản phần mềm Podman
+</summary>
+</member>
+<member name="T:PodmanFUI.Domain.Models.HostInfo">
+<summary>
+ Thông tin phần cứng và cấu hình động cơ Podman
+</summary>
+</member>
+<member name="T:PodmanFUI.Domain.Models.CgroupInfo">
+<summary>
+ Thông tin phân hệ Cgroup máy chủ
+</summary>
+</member>
+<member name="T:PodmanFUI.Domain.Models.SocketDiscoveryResult">
+<summary>
+ Kết quả của thuật toán dò tìm đường dẫn Unix Domain Socket
+</summary>
+</member>
+<member name="T:PodmanFUI.Domain.Models.SocketMode">
+<summary>
+ Chế độ hoạt động của Podman Socket
+</summary>
+</member>
+</members>
+</doc>
