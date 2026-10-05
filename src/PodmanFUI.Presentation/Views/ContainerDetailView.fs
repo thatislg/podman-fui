@@ -1,3 +1,4 @@
+#nowarn "0044"
 namespace PodmanFUI.Presentation.Views
 
 open System
