@@ -82,6 +82,19 @@ Hiện thực hóa bộ khung kiến trúc luồng dữ liệu một chiều MVU
 - [x] **Subtask 2.4.5 - Thành phần giao diện Chân trang & Hộp thoại (`Views/FooterView.fs`, `Views/ModalsView.fs`):**
   - Render thanh phím tắt ngữ cảnh ở đáy màn hình.
   - Render Modal xác nhận xóa container (`ConfirmActionDialog`), Modal nhập từ khóa tìm kiếm (`FilterInputDialog`), Modal báo lỗi hệ thống (`ErrorAlertDialog`).
+- [x] **Subtask 2.4.6 - Điều hướng Bàn phím Toàn cục & Hỗ trợ Chuột Toàn diện:**
+  - Chuyển `top.KeyDown` sang `app.Keyboard.KeyDown` bắt phím ở tầng Application cao nhất, giải quyết triệt để lỗi `ListView` nuốt phím số `1..5`, `Tab`, `[`, `]`.
+  - Bổ sung `CategoryClicked` trên `TopBarView` và `TabClicked` trên `ContainerDetailView` hỗ trợ click chuột trực tiếp đổi danh mục và tab.
+  - Bổ sung phím mũi tên `←` / `→` và phím chức năng `F1` - `F4` chuyển tab chi tiết vòng tròn.
+  - Bổ sung màn hình tổng quan và hướng dẫn quay lại khi chọn các danh mục chưa mở (Pods, Images, Volumes, Networks).
+- [x] **Subtask 2.4.7 - Teardown Terminal & Vô hiệu hóa Mouse Tracking ANSI SGR:**
+  - Bọc vòng lặp trong `try ... finally` ở cả `MvuLoop.fs` và `Program.fs`.
+  - Gọi `(app :> IDisposable).Dispose()` và `top.Dispose()` dừng các thread chạy nền của Terminal.Gui.
+  - Gửi chuỗi ANSI reset tiêu chuẩn (`\u001B[?1006l\u001B[?1015l\u001B[?1003l\u001B[?1002l\u001B[?1001l\u001B[?1000l\u001B[?2004l\u001B[?1049l\u001B[?25h\u001B[0m`), tắt triệt để chế độ chuột SGR và Any-motion, giải quyết dứt điểm hiện tượng in rác tọa độ chuột `21M14;81` vào terminal prompt khi thoát.
+- [x] **Subtask 2.4.8 - Triệt tiêu Cảnh báo Obsolete (0 Warnings Build):**
+  - Thêm chỉ thị `#nowarn "0044"` tại `ContainerDetailView.fs` triệt tiêu cảnh báo obsolete `FS0044` của `TextView`, đưa giải pháp về trạng thái build hoàn toàn sạch sẽ: **0 Warning(s), 0 Error(s)**.
+- [x] **Subtask 2.4.9 - Bảng màu Cyberpunk / Modern Cyan Dark Theme & Viền Bo Tròn:**
+  - Mở rộng `Theme.fs` với bộ phối màu chuẩn: viền bo tròn mềm mại (`LineStyle.Rounded`), tone nền Dark Navy (`#0F141E`), viền và tiêu đề Cyan1 rực rỡ khi được focus (`▶ Containers ◀`), highlight hàng container được chọn với DeepSkyBlue (`#005096`), modal cảnh báo xóa container viền đỏ nổi bật.
 
 ### 2.5. Hiện thực hóa Động cơ Vòng lặp MVU & App Host
 *[Căn cứ thiết kế: `Design_M2_Core_MVP_Dashboard.md` - Mục 4.1: Thuật Toán Vòng Lặp MVU]*
@@ -90,7 +103,7 @@ Hiện thực hóa bộ khung kiến trúc luồng dữ liệu một chiều MVU
   - Hiện thực hàm cập nhật thuần khiết `update: DashboardMsg -> DashboardModel -> DashboardModel * DashboardCmd` xử lý toàn bộ các kịch bản bàn phím, chuột, và thông điệp socket theo Mục 4.1.
   - Đồng bộ luồng giao diện thông qua `Application.Invoke` của Terminal.Gui v2.
 - [x] **Subtask 2.5.2 - Điểm thực thi Dashboard App (`src/PodmanFUI.App/Program.fs`):**
-  - Khởi tạo `Application.Init()`, gắn kết `MvuLoop`, bắt sự kiện tắt ứng dụng an toàn khi người dùng nhấn `q`.
+  - Khởi tạo `Application.Init()`, gắn kết `MvuLoop`, bắt sự kiện tắt ứng dụng an toàn khi người dùng nhấn `q`, `Q`, `Ctrl+Q` hoặc `Ctrl+C`.
 
 ### 2.6. Kiểm thử Nghiệm thu Kỹ thuật (Technical Acceptance Testing)
 *[Căn cứ thiết kế: `Design_M2_Core_MVP_Dashboard.md` - Mục 7: Ma Trận Ca Kiểm Thử Nghiệm Thu]*
@@ -106,6 +119,12 @@ Hiện thực hóa bộ khung kiến trúc luồng dữ liệu một chiều MVU
   - Nhấn `/`, gõ từ khóa tên container -> danh sách lọc tức thời theo thời gian thực.
 - [x] **Subtask 2.6.6 - Thực thi kiểm thử ca TC-M2-06 (Hộp thoại xác nhận xóa an toàn):**
   - Nhấn `d` trên container dừng -> mở modal xác nhận; nhấn `Esc` để hủy, nhấn `y` để xóa.
+- [x] **Subtask 2.6.7 - Thực thi kiểm thử ca TC-M2-07 (Điều hướng danh mục & Tab đa phương thức):**
+  - Xác nhận phím số `1`..`5`, click chuột TopBar, phím mũi tên `←` / `→`, `[` / `]`, `F1` - `F4`, và phím `Tab` luân chuyển focus hoạt động mượt mà.
+- [x] **Subtask 2.6.8 - Thực thi kiểm thử ca TC-M2-08 (Dọn dẹp Terminal khi thoát trong PTY):**
+  - Kiểm thử thoát ứng dụng trong môi trường PTY, xác nhận toàn bộ mã ANSI tắt chuột (`?1006l`, `?1003l`), thoát buffer (`?1049l`) và hiện con trỏ (`?25h`) được gửi sạch sẽ.
+- [x] **Subtask 2.6.9 - Thực thi kiểm thử ca TC-M2-09 (Chủ đề màu sắc & Viền bo tròn):**
+  - Xác thực giao diện Modern Cyan Dark Theme và viền bo tròn `LineStyle.Rounded` hoạt động chuẩn xác, không chói mắt.
 
 ---
 
@@ -115,4 +134,8 @@ Hiện thực hóa bộ khung kiến trúc luồng dữ liệu một chiều MVU
 2. Danh sách container được cập nhật chính xác từ Podman Socket.
 3. Người dùng có thể Start, Stop, Restart, Xóa container bằng phím tắt một chạm (1-keypress).
 4. Nhấn phím `e` mở được shell trực tiếp vào container, khi gõ `exit` quay trở lại dashboard bình thường mà không bị lỗi con trỏ chuột hay mất hiển thị terminal.
-5. Vượt qua toàn bộ các ca kiểm thử từ TC-M2-01 đến TC-M2-06.
+5. Hỗ trợ điều hướng toàn diện cả bàn phím (`1`..`5`, `Tab`, `←`/`→`, `[`/`]`, `F1`-`F4`) và chuột (click danh mục TopBar và click tab chi tiết).
+6. Khi thoát ứng dụng, terminal được dọn dẹp sạch sẽ 100%, không bị tràn ký tự rác tọa độ chuột `21M14;81`.
+7. Mã nguồn biên dịch đạt trạng thái hoàn hảo **0 Warning(s), 0 Error(s)**.
+8. Giao diện sở hữu phối màu Modern Cyan Dark Theme dịu mắt với đường viền bo góc tròn mềm mại.
+9. Vượt qua toàn bộ các ca kiểm thử từ TC-M2-01 đến TC-M2-09.

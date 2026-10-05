@@ -62,6 +62,7 @@ Milestone 2 đã hiện thực hóa thành công bộ khung kiến trúc luồng
 | Tên Tệp | Trách Nhiệm Kỹ Thuật |
 | :--- | :--- |
 | `ResponsiveLayoutManager.fs` | Thuật toán tính toán bố cục động phân bổ tọa độ và kích thước các khung nhìn theo Breakpoints (`Compact`, `Standard`, `Expanded`). |
+| `Theme.fs` | Cấu hình bảng màu Modern Cyan Dark Theme (Cyan1/Navy/DeepSkyBlue) và kiểu dáng viền bo góc tròn `LineStyle.Rounded` cho toàn bộ ứng dụng. |
 | `Views/TopBarView.fs` | Khung điều hướng danh mục tài nguyên trên cùng và hiển thị trạng thái kết nối socket. |
 | `Views/SidebarView.fs` | Bảng danh sách container trực quan với biểu tượng chấm trạng thái màu sắc và cột dữ liệu thích ứng. |
 | `Views/ContainerDetailView.fs` | Khung thông tin chi tiết đa tab (`Logs`, `Inspect`, `Top`, `Env`) với phím tắt chuyển tab nhanh. |
@@ -81,7 +82,7 @@ Milestone 2 đã hiện thực hóa thành công bộ khung kiến trúc luồng
 
 ### 3.1. Ma trận Ca kiểm thử Nghiệm thu
 
-Toàn bộ 6 kịch bản kiểm thử nghiệm thu theo đặc tả tại Mục 7 của bản Thiết kế Chi tiết đã được thực thi và xác minh thành công 100%:
+Toàn bộ 9 kịch bản kiểm thử nghiệm thu theo đặc tả tại Mục 7 của bản Thiết kế Chi tiết và các kịch bản hoàn thiện đã được thực thi và xác minh thành công 100%:
 
 | Mã Ca Kiểm Thử | Tên Kịch Bản Kiểm Thử | Tiêu Chí Đạt Nghiệm Thu | Kết Quả Thực Tế | Trạng Thái |
 | :---: | :--- | :--- | :--- | :---: |
@@ -91,6 +92,9 @@ Toàn bộ 6 kịch bản kiểm thử nghiệm thu theo đặc tả tại Mục
 | **TC-M2-04** | Co giãn cửa sổ Terminal thích ứng (Responsive Test) | Thu nhỏ cửa sổ dưới 80 cột tự động chuyển chế độ Single View không bị vỡ bố cục hay tràn viền bộ đệm. | Nhận diện chính xác ngưỡng Breakpoint (Compact 70x20, Standard 100x30, Expanded 160x40), phân bổ tỷ lệ 38%/62% chính xác. | **PASS** |
 | **TC-M2-05** | Tìm kiếm & Lọc mờ container theo tên | Nhấn `/`, gõ từ khóa lọc tức thời danh sách theo thời gian thực; nhấn `Esc` hoàn nguyên toàn bộ danh sách. | Lọc chính xác container theo từ khóa; reset `SelectedIndex` về 0; lệnh `ClearFilter` phục hồi 100% dữ liệu gốc. | **PASS** |
 | **TC-M2-06** | Hộp thoại xác nhận xóa an toàn | Nhấn `d` mở modal xác nhận; nhấn `Esc` hủy thao tác an toàn; nhấn `y` phát sinh lệnh xóa vĩnh viễn. | Modal hiển thị cảnh báo; hủy bỏ không xóa khi nhấn `Esc`; gửi lệnh xóa `DELETE` chính xác khi nhấn `y`. | **PASS** |
+| **TC-M2-07** | Điều hướng danh mục & Tab đa phương thức | Hỗ trợ phím số `1`..`5`, click chuột TopBar, phím mũi tên `←`/`→`, `[`/`]`, `F1`-`F4`, và phím `Tab` luân chuyển focus không bị kẹt. | Chuyển đổi qua lại giữa các danh mục và các tab mượt mà; hỗ trợ cả chuột và bàn phím đầy đủ. | **PASS** |
+| **TC-M2-08** | Dọn dẹp Terminal khi thoát trong PTY | Thoát ứng dụng bằng `q` hoặc `Ctrl+C` trong mọi terminal không sinh chuỗi rác ANSI SGR mouse mode (`21M14;81`). | Thu hồi driver, khôi phục `termios`, tắt chế độ chuột `?1006l`/`?1003l` và khôi phục bộ đệm màn hình an toàn 100%. | **PASS** |
+| **TC-M2-09** | Chủ đề màu sắc & Viền bo tròn thẩm mỹ | Phối màu Modern Cyan Dark Theme dịu mắt, tương phản cao, áp dụng viền bo tròn `LineStyle.Rounded` cho các phân vùng. | Hiển thị chuẩn xác trên dark terminal; màu sắc phân cấp rõ ràng giữa tiêu điểm, viền và thanh trạng thái. | **PASS** |
 
 ### 3.2. Phương thức & Quy trình Nghiệm thu Thực tế
 
@@ -112,10 +116,10 @@ Quy trình nghiệm thu Milestone 2 được tổ chức theo 2 phương thức 
    - Toàn bộ ghi chú giải thích thuật toán trong mã nguồn sử dụng **Tiếng Việt**.
    - Toàn bộ tài liệu trong thư mục `docs/` tuân thủ nguyên tắc **Zero Code Samples**.
 2. **Chất lượng Kiến trúc & Biên dịch:**
-   - Biên dịch thành công toàn bộ Solution `podman-FUI.sln` với 0 lỗi (0 Error).
+   - Biên dịch hoàn hảo toàn bộ Solution `podman-FUI.sln` với **0 Cảnh báo (0 Warning)** và **0 Lỗi (0 Error)**.
    - Tách biệt hoàn toàn tầng Domain khỏi bất kỳ sự phụ thuộc công nghệ bên ngoài nào.
 3. **Tiêu chí Hoàn thành Cột mốc (Definition of Done):**
-   - Đạt 100% các tiêu chí nghiệm thu đề ra trong kế hoạch phát triển Milestone 2.
+   - Đạt 100% toàn bộ 9 tiêu chí nghiệm thu đề ra trong kế hoạch phát triển Milestone 2 (từ TC-M2-01 đến TC-M2-09).
 
 ---
 
