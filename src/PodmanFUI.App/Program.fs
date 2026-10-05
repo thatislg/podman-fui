@@ -6,35 +6,40 @@ open PodmanFUI.Domain.Errors
 open PodmanFUI.Domain.Models
 open PodmanFUI.Infrastructure
 open PodmanFUI.Presentation
+open PodmanFUI.Presentation.MvuLoop
 
 module Program =
 
     [<EntryPoint>]
-    let main _argv =
-        // 1. Hiển thị banner khởi động ứng dụng
-        PocRenderer.renderWelcomeBanner()
+    let main argv =
+        let isPoc = argv |> Array.exists (fun arg -> arg = "--poc" || arg = "--diagnose")
 
-        // 2. Dò tìm đường dẫn Unix Domain Socket theo thứ tự ưu tiên
+        // 1. Dò tìm đường dẫn Unix Domain Socket theo thứ tự ưu tiên
         match SocketDiscovery.discoverSocket() with
         | NotFound (attemptedPaths, hint) ->
             let err = SocketNotFound ("", attemptedPaths, hint)
             PocRenderer.renderErrorDialog err
             1
         | Discovered (socketPath, mode) ->
-            // 3. Khởi tạo client kết nối Unix Domain Socket
-            use client = new PodmanSocketClient(socketPath, mode)
-            let socketClient = client :> IPodmanSocketClient
+            if isPoc then
+                // Chế độ chẩn đoán nhanh Socket từ Milestone 1
+                PocRenderer.renderWelcomeBanner()
+                use client = new PodmanSocketClient(socketPath, mode)
+                let socketClient = client :> IPodmanSocketClient
+                let result =
+                    socketClient.GetSystemInfoAsync()
+                    |> Async.RunSynchronously
 
-            // 4. Gửi truy vấn kiểm tra tới endpoint GET /v4.0.0/libpod/info
-            let result =
-                socketClient.GetSystemInfoAsync()
-                |> Async.RunSynchronously
-
-            // 5. Kết xuất dữ liệu nghiệm thu hoặc cảnh báo lỗi
-            match result with
-            | Ok systemInfo ->
-                PocRenderer.renderSystemInfoTable systemInfo
-                0
-            | Error err ->
-                PocRenderer.renderErrorDialog err
-                1
+                match result with
+                | Ok systemInfo ->
+                    PocRenderer.renderSystemInfoTable systemInfo
+                    0
+                | Error err ->
+                    PocRenderer.renderErrorDialog err
+                    1
+            else
+                // Chế độ Dashboard TUI tương tác chính của Milestone 2
+                use client = new ContainerApiClient(socketPath)
+                let service = client :> IContainerService
+                let dashboardApp = new DashboardApp(service)
+                dashboardApp.Run()

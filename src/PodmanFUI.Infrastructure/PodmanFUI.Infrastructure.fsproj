@@ -9,6 +9,8 @@
     <Compile Include="SocketDiscovery.fs" />
     <Compile Include="LibpodJsonParser.fs" />
     <Compile Include="PodmanSocketClient.fs" />
+    <Compile Include="ContainerApiClient.fs" />
+    <Compile Include="ProcessExecutionService.fs" />
   </ItemGroup>
 
   <ItemGroup>

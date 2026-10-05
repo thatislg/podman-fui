@@ -8,7 +8,11 @@
   <ItemGroup>
     <Compile Include="Errors.fs" />
     <Compile Include="Models.fs" />
+    <Compile Include="ContainerModels.fs" />
+    <Compile Include="NavigationModels.fs" />
+    <Compile Include="MvuTypes.fs" />
     <Compile Include="ISocketClient.fs" />
+    <Compile Include="IContainerService.fs" />
   </ItemGroup>
 
 </Project>

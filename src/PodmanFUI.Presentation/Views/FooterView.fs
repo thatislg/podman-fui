@@ -1,0 +1,50 @@
+namespace PodmanFUI.Presentation.Views
+
+open Terminal.Gui.Views
+open Terminal.Gui.ViewBase
+open PodmanFUI.Domain.ContainerModels
+open PodmanFUI.Domain.MvuTypes
+
+/// Khung chân trang hiển thị hướng dẫn phím tắt ngữ cảnh (FooterBar)
+type FooterView() as this =
+    inherit View()
+
+    let label = new Label()
+
+    do
+        this.Height <- Dim.Absolute(1)
+        this.Width <- Dim.Fill()
+        label.X <- Pos.Absolute(1)
+        label.Y <- Pos.Absolute(0)
+        label.Width <- Dim.Fill()
+        label.Height <- Dim.Absolute(1)
+        this.Add(label) |> ignore
+
+    /// Cập nhật nhãn phím tắt theo ngữ cảnh thực thể Container đang chọn
+    member this.Update(model: DashboardModel) =
+        let selectedContainer =
+            if model.SelectedIndex >= 0 && model.SelectedIndex < model.FilteredContainers.Length then
+                Some model.FilteredContainers.[model.SelectedIndex]
+            else
+                None
+
+        let actionHint =
+            match selectedContainer with
+            | Some c ->
+                match c.Status with
+                | ContainerStatus.Running ->
+                    "[s] Stop  [r] Restart  [p] Pause  [d] Delete  [e] Shell"
+                | ContainerStatus.Paused ->
+                    "[p] Unpause  [d] Delete"
+                | ContainerStatus.Exited
+                | ContainerStatus.Created
+                | ContainerStatus.Restarting
+                | ContainerStatus.Dead ->
+                    "[s] Start  [r] Restart  [d] Delete"
+            | None ->
+                "[s] Action  [d] Delete"
+
+        let guideText =
+            sprintf "[1-5] Tabs  [Tab] Pane  [j/k] Nav  [%s] Tabs  %s  [/] Filter  [q] Quit" "[]" actionHint
+
+        label.Text <- guideText

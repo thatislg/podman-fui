@@ -8,10 +8,18 @@
   <ItemGroup>
     <Compile Include="Theme.fs" />
     <Compile Include="PocRenderer.fs" />
+    <Compile Include="ResponsiveLayoutManager.fs" />
+    <Compile Include="Views\TopBarView.fs" />
+    <Compile Include="Views\SidebarView.fs" />
+    <Compile Include="Views\ContainerDetailView.fs" />
+    <Compile Include="Views\FooterView.fs" />
+    <Compile Include="Views\ModalsView.fs" />
+    <Compile Include="MvuLoop.fs" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\PodmanFUI.Domain\PodmanFUI.Domain.fsproj" />
+    <ProjectReference Include="..\PodmanFUI.Infrastructure\PodmanFUI.Infrastructure.fsproj" />
   </ItemGroup>
 
   <ItemGroup>
