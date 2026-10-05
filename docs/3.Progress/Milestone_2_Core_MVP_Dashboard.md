@@ -5,7 +5,7 @@
 - **Vị trí lưu trữ:** `docs/3.Progress/Milestone_2_Core_MVP_Dashboard.md`
 - **Trạng thái:** **Chờ thực hiện (Next Up)**
 - **Bản thiết kế kỹ thuật thực thi (Design Specification):**
-  - [**`Design_M2_Core_MVP_Dashboard.md`**](../2.Design/Design_M2_Core_MVP_Dashboard.md) *(Dự kiến soạn thảo trước khi bắt đầu M2)*
+  - [**`Design_M2_Core_MVP_Dashboard.md`**](../2.Design/Design_M2_Core_MVP_Dashboard.md) *(Bản thiết kế chi tiết DD-M2-CORE-MVP-DASHBOARD đã hoàn thiện)*
 - **Tài liệu điều tra liên kết (Investigation References):**
   - [**`02_UI_Framework_and_Rendering_Investigation.md`**](../1.Investigation/02_UI_Framework_and_Rendering_Investigation.md)
   - [**`03_FSharp_Architecture_and_State_Management_Investigation.md`**](../1.Investigation/03_FSharp_Architecture_and_State_Management_Investigation.md)
@@ -21,8 +21,8 @@ Hiện thực hóa bộ khung kiến trúc luồng dữ liệu một chiều MVU
 ## 2. DANH MỤC CÔNG VIỆC CHI TIẾT (TASK CHECKLIST)
 
 ### 2.1. Thiết kế Kiến trúc Mã nguồn (Thư mục `docs/2.Design/`)
-- [ ] Soạn thảo tài liệu thiết kế phân rã module hệ thống (Domain, Infrastructure, Presentation, State).
-- [ ] Thiết kế chi tiết sơ đồ luồng dữ liệu MVU và các định nghĩa kiểu dữ liệu bất biến (Model Types & Discriminated Unions).
+- [x] Soạn thảo tài liệu thiết kế chi tiết phân rã module hệ thống (Domain, Infrastructure, Presentation, App).
+- [x] Đặc tả chi tiết Hợp đồng dữ liệu nguyên tử, sơ đồ luồng MVU, thuật toán co giãn layout và bọc shell PTY.
 
 ### 2.2. Xây dựng Khung Điều khiển MVU (Elmish Loop)
 - [ ] Xây dựng vòng lặp MVU thuần F#:

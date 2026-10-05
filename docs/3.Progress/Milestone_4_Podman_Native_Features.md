@@ -5,7 +5,7 @@
 - **Vị trí lưu trữ:** `docs/3.Progress/Milestone_4_Podman_Native_Features.md`
 - **Trạng thái:** **Chờ thực hiện (Scheduled)**
 - **Bản thiết kế kỹ thuật thực thi (Design Specification):**
-  - [**`Design_M4_Podman_Native_Architecture.md`**](../2.Design/Design_M4_Podman_Native_Architecture.md) *(Bản thiết kế bằng lời đã lập)*
+  - [**`Design_M4_Podman_Native_Architecture.md`**](../2.Design/Design_M4_Podman_Native_Architecture.md) *(Bản thiết kế chi tiết DD-M4-PODMAN-NATIVE đã hoàn thiện)*
 - **Tài liệu điều tra liên kết (Investigation References):**
   - [**`01_Podman_Socket_and_API_Investigation.md`**](../1.Investigation/01_Podman_Socket_and_API_Investigation.md)
   - [**`04_Benchmarking_and_Feature_Mapping_Investigation.md`**](../1.Investigation/04_Benchmarking_and_Feature_Mapping_Investigation.md)

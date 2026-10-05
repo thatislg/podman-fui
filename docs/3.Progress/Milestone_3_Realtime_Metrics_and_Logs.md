@@ -5,7 +5,7 @@
 - **Vị trí lưu trữ:** `docs/3.Progress/Milestone_3_Realtime_Metrics_and_Logs.md`
 - **Trạng thái:** **Chờ thực hiện (Scheduled)**
 - **Bản thiết kế kỹ thuật thực thi (Design Specification):**
-  - [**`Design_M3_Realtime_Metrics_and_Logs.md`**](../2.Design/Design_M3_Realtime_Metrics_and_Logs.md) *(Bản thiết kế bằng lời đã lập)*
+  - [**`Design_M3_Realtime_Metrics_and_Logs.md`**](../2.Design/Design_M3_Realtime_Metrics_and_Logs.md) *(Bản thiết kế chi tiết DD-M3-REALTIME-MONITORING đã hoàn thiện)*
 - **Tài liệu điều tra liên kết (Investigation References):**
   - [**`01_Podman_Socket_and_API_Investigation.md`**](../1.Investigation/01_Podman_Socket_and_API_Investigation.md)
   - [**`02_UI_Framework_and_Rendering_Investigation.md`**](../1.Investigation/02_UI_Framework_and_Rendering_Investigation.md)

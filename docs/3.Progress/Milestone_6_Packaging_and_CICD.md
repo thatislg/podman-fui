@@ -5,7 +5,7 @@
 - **Vị trí lưu trữ:** `docs/3.Progress/Milestone_6_Packaging_and_CICD.md`
 - **Trạng thái:** **Chờ thực hiện (Scheduled)**
 - **Bản thiết kế kỹ thuật thực thi (Design Specification):**
-  - [**`Design_M6_Packaging_and_Distribution.md`**](../2.Design/Design_M6_Packaging_and_Distribution.md) *(Bản thiết kế bằng lời đã lập)*
+  - [**`Design_M6_Packaging_and_Distribution.md`**](../2.Design/Design_M6_Packaging_and_Distribution.md) *(Bản thiết kế chi tiết DD-M6-PACKAGING-DISTRIBUTION đã hoàn thiện)*
 - **Tài liệu điều tra liên kết (Investigation References):**
   - [**`05_Packaging_and_Cross_Distro_Investigation.md`**](../1.Investigation/05_Packaging_and_Cross_Distro_Investigation.md)
 

@@ -5,7 +5,7 @@
 - **Vị trí lưu trữ:** `docs/3.Progress/Milestone_5_UX_Polish_and_Cross_Distro.md`
 - **Trạng thái:** **Chờ thực hiện (Scheduled)**
 - **Bản thiết kế kỹ thuật thực thi (Design Specification):**
-  - [**`Design_M5_UX_Interaction_and_Resilience.md`**](../2.Design/Design_M5_UX_Interaction_and_Resilience.md) *(Bản thiết kế bằng lời đã lập)*
+  - [**`Design_M5_UX_Interaction_and_Resilience.md`**](../2.Design/Design_M5_UX_Interaction_and_Resilience.md) *(Bản thiết kế chi tiết DD-M5-UX-RESILIENCE đã hoàn thiện)*
 - **Tài liệu điều tra liên kết (Investigation References):**
   - [**`02_UI_Framework_and_Rendering_Investigation.md`**](../1.Investigation/02_UI_Framework_and_Rendering_Investigation.md)
   - [**`05_Packaging_and_Cross_Distro_Investigation.md`**](../1.Investigation/05_Packaging_and_Cross_Distro_Investigation.md)
