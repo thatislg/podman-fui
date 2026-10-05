@@ -438,134 +438,147 @@ module MvuLoop =
                     ) |> ignore
 
         member this.Run() : int =
-            app.Init() |> ignore
+            try
+                app.Init() |> ignore
 
-            top.Add(topBar) |> ignore
-            top.Add(sidebar) |> ignore
-            top.Add(detailView) |> ignore
-            top.Add(footerView) |> ignore
-            top.Add(modalsView) |> ignore
+                top.Add(topBar) |> ignore
+                top.Add(sidebar) |> ignore
+                top.Add(detailView) |> ignore
+                top.Add(footerView) |> ignore
+                top.Add(modalsView) |> ignore
 
-            // Gắn kết sự kiện chuột (Mouse Event Listeners)
-            topBar.CategoryClicked.Add(fun cat ->
-                dispatch (CategoryChanged cat)
-            )
-
-            detailView.TabClicked.Add(fun tab ->
-                dispatch (TabChanged tab)
-            )
-
-            sidebar.ListView.ValueChanged.Add(fun e ->
-                if e.NewValue.HasValue && model.ActiveCategory = NavigationCategory.Containers then
-                    let newIdx = e.NewValue.Value
-                    if newIdx <> model.SelectedIndex && newIdx >= 0 && newIdx < model.FilteredContainers.Length then
-                        dispatch (RowSelected newIdx)
-            )
-
-            // Gắn kết bàn phím toàn cục (Global Keyboard Hook qua app.Keyboard.KeyDown)
-            app.Keyboard.KeyDown.Add(fun (key: Key) ->
-                match model.ActiveModal with
-                | ConfirmActionDialog _ ->
-                    let baseKey = key.NoShift.NoCtrl.NoAlt
-                    if baseKey = Key.Y || baseKey = Key.Enter then
-                        key.Handled <- true
-                        dispatch ConfirmModal
-                    elif baseKey = Key.N || baseKey = Key.Esc then
-                        key.Handled <- true
-                        dispatch DismissModal
-                | FilterInputDialog ->
-                    let baseKey = key.NoShift.NoCtrl.NoAlt
-                    if baseKey = Key.Enter then
-                        key.Handled <- true
-                        dispatch (UpdateFilter modalsView.InputField.Text)
-                        dispatch ConfirmModal
-                    elif baseKey = Key.Esc then
-                        key.Handled <- true
-                        dispatch ClearFilter
-                    // Không đánh dấu Handled để TextField nhận phím gõ bình thường
-                | ErrorAlertDialog _ ->
-                    let baseKey = key.NoShift.NoCtrl.NoAlt
-                    if baseKey = Key.Enter || baseKey = Key.Esc then
-                        key.Handled <- true
-                        dispatch DismissModal
-                | Closed ->
-                    let baseKey = key.NoShift.NoCtrl.NoAlt
-                    if baseKey = Key.Q then
-                        key.Handled <- true
-                        app.RequestStop()
-                    elif baseKey = Key.D1 then
-                        key.Handled <- true
-                        dispatch (CategoryChanged NavigationCategory.Pods)
-                    elif baseKey = Key.D2 then
-                        key.Handled <- true
-                        dispatch (CategoryChanged NavigationCategory.Containers)
-                    elif baseKey = Key.D3 then
-                        key.Handled <- true
-                        dispatch (CategoryChanged NavigationCategory.Images)
-                    elif baseKey = Key.D4 then
-                        key.Handled <- true
-                        dispatch (CategoryChanged NavigationCategory.Volumes)
-                    elif baseKey = Key.D5 then
-                        key.Handled <- true
-                        dispatch (CategoryChanged NavigationCategory.Networks)
-                    elif baseKey = Key.Tab then
-                        key.Handled <- true
-                        dispatch ToggleFocus
-                    elif baseKey = Key.F1 then
-                        key.Handled <- true
-                        dispatch (TabChanged DetailTab.Logs)
-                    elif baseKey = Key.F2 then
-                        key.Handled <- true
-                        dispatch (TabChanged DetailTab.Inspect)
-                    elif baseKey = Key.F3 then
-                        key.Handled <- true
-                        dispatch (TabChanged DetailTab.Top)
-                    elif baseKey = Key.F4 then
-                        key.Handled <- true
-                        dispatch (TabChanged DetailTab.Env)
-                    elif baseKey = Key.CursorLeft || baseKey = Key(int '[') then
-                        key.Handled <- true
-                        dispatch (KeyPressed "[")
-                    elif baseKey = Key.CursorRight || baseKey = Key(int ']') then
-                        key.Handled <- true
-                        dispatch (KeyPressed "]")
-                    elif baseKey = Key.CursorUp || baseKey = Key.K then
-                        key.Handled <- true
-                        dispatch (KeyPressed "k")
-                    elif baseKey = Key.CursorDown || baseKey = Key.J then
-                        key.Handled <- true
-                        dispatch (KeyPressed "j")
-                    elif baseKey = Key.S then
-                        key.Handled <- true
-                        dispatch (KeyPressed "s")
-                    elif baseKey = Key.R then
-                        key.Handled <- true
-                        dispatch (KeyPressed "r")
-                    elif baseKey = Key.P then
-                        key.Handled <- true
-                        dispatch (KeyPressed "p")
-                    elif baseKey = Key.D then
-                        key.Handled <- true
-                        dispatch (KeyPressed "d")
-                    elif baseKey = Key.E then
-                        key.Handled <- true
-                        dispatch (KeyPressed "e")
-                    elif baseKey = Key(int '/') then
-                        key.Handled <- true
-                        dispatch (KeyPressed "/")
-            )
-
-            // Gắn kết thay đổi kích thước terminal
-            if app.Driver <> null then
-                app.Driver.SizeChanged.Add(fun _ ->
-                    dispatch (TerminalResized (app.Driver.Cols, app.Driver.Rows))
+                // Gắn kết sự kiện chuột (Mouse Event Listeners)
+                topBar.CategoryClicked.Add(fun cat ->
+                    dispatch (CategoryChanged cat)
                 )
 
-            // Kích hoạt nạp dữ liệu ban đầu
-            let initialCols = if app.Driver <> null && app.Driver.Cols > 0 then app.Driver.Cols else 100
-            let initialRows = if app.Driver <> null && app.Driver.Rows > 0 then app.Driver.Rows else 30
-            dispatch (TerminalResized (initialCols, initialRows))
-            executeCmd DashboardCmd.FetchContainers
+                detailView.TabClicked.Add(fun tab ->
+                    dispatch (TabChanged tab)
+                )
 
-            app.Run(top) |> ignore
-            0
+                sidebar.ListView.ValueChanged.Add(fun e ->
+                    if e.NewValue.HasValue && model.ActiveCategory = NavigationCategory.Containers then
+                        let newIdx = e.NewValue.Value
+                        if newIdx <> model.SelectedIndex && newIdx >= 0 && newIdx < model.FilteredContainers.Length then
+                            dispatch (RowSelected newIdx)
+                )
+
+                // Gắn kết bàn phím toàn cục (Global Keyboard Hook qua app.Keyboard.KeyDown)
+                app.Keyboard.KeyDown.Add(fun (key: Key) ->
+                    match model.ActiveModal with
+                    | ConfirmActionDialog _ ->
+                        let baseKey = key.NoShift.NoCtrl.NoAlt
+                        if baseKey = Key.Y || baseKey = Key.Enter then
+                            key.Handled <- true
+                            dispatch ConfirmModal
+                        elif baseKey = Key.N || baseKey = Key.Esc then
+                            key.Handled <- true
+                            dispatch DismissModal
+                    | FilterInputDialog ->
+                        let baseKey = key.NoShift.NoCtrl.NoAlt
+                        if baseKey = Key.Enter then
+                            key.Handled <- true
+                            dispatch (UpdateFilter modalsView.InputField.Text)
+                            dispatch ConfirmModal
+                        elif baseKey = Key.Esc then
+                            key.Handled <- true
+                            dispatch ClearFilter
+                        // Không đánh dấu Handled để TextField nhận phím gõ bình thường
+                    | ErrorAlertDialog _ ->
+                        let baseKey = key.NoShift.NoCtrl.NoAlt
+                        if baseKey = Key.Enter || baseKey = Key.Esc then
+                            key.Handled <- true
+                            dispatch DismissModal
+                    | Closed ->
+                        let baseKey = key.NoShift.NoCtrl.NoAlt
+                        if baseKey = Key.Q || key = Key.Q.WithCtrl || key = Key.C.WithCtrl then
+                            key.Handled <- true
+                            app.RequestStop(top)
+                        elif baseKey = Key.D1 then
+                            key.Handled <- true
+                            dispatch (CategoryChanged NavigationCategory.Pods)
+                        elif baseKey = Key.D2 then
+                            key.Handled <- true
+                            dispatch (CategoryChanged NavigationCategory.Containers)
+                        elif baseKey = Key.D3 then
+                            key.Handled <- true
+                            dispatch (CategoryChanged NavigationCategory.Images)
+                        elif baseKey = Key.D4 then
+                            key.Handled <- true
+                            dispatch (CategoryChanged NavigationCategory.Volumes)
+                        elif baseKey = Key.D5 then
+                            key.Handled <- true
+                            dispatch (CategoryChanged NavigationCategory.Networks)
+                        elif baseKey = Key.Tab then
+                            key.Handled <- true
+                            dispatch ToggleFocus
+                        elif baseKey = Key.F1 then
+                            key.Handled <- true
+                            dispatch (TabChanged DetailTab.Logs)
+                        elif baseKey = Key.F2 then
+                            key.Handled <- true
+                            dispatch (TabChanged DetailTab.Inspect)
+                        elif baseKey = Key.F3 then
+                            key.Handled <- true
+                            dispatch (TabChanged DetailTab.Top)
+                        elif baseKey = Key.F4 then
+                            key.Handled <- true
+                            dispatch (TabChanged DetailTab.Env)
+                        elif baseKey = Key.CursorLeft || baseKey = Key(int '[') then
+                            key.Handled <- true
+                            dispatch (KeyPressed "[")
+                        elif baseKey = Key.CursorRight || baseKey = Key(int ']') then
+                            key.Handled <- true
+                            dispatch (KeyPressed "]")
+                        elif baseKey = Key.CursorUp || baseKey = Key.K then
+                            key.Handled <- true
+                            dispatch (KeyPressed "k")
+                        elif baseKey = Key.CursorDown || baseKey = Key.J then
+                            key.Handled <- true
+                            dispatch (KeyPressed "j")
+                        elif baseKey = Key.S then
+                            key.Handled <- true
+                            dispatch (KeyPressed "s")
+                        elif baseKey = Key.R then
+                            key.Handled <- true
+                            dispatch (KeyPressed "r")
+                        elif baseKey = Key.P then
+                            key.Handled <- true
+                            dispatch (KeyPressed "p")
+                        elif baseKey = Key.D then
+                            key.Handled <- true
+                            dispatch (KeyPressed "d")
+                        elif baseKey = Key.E then
+                            key.Handled <- true
+                            dispatch (KeyPressed "e")
+                        elif baseKey = Key(int '/') then
+                            key.Handled <- true
+                            dispatch (KeyPressed "/")
+                )
+
+                // Gắn kết thay đổi kích thước terminal
+                if app.Driver <> null then
+                    app.Driver.SizeChanged.Add(fun _ ->
+                        dispatch (TerminalResized (app.Driver.Cols, app.Driver.Rows))
+                    )
+
+                // Kích hoạt nạp dữ liệu ban đầu
+                let initialCols = if app.Driver <> null && app.Driver.Cols > 0 then app.Driver.Cols else 100
+                let initialRows = if app.Driver <> null && app.Driver.Rows > 0 then app.Driver.Rows else 30
+                dispatch (TerminalResized (initialCols, initialRows))
+                executeCmd DashboardCmd.FetchContainers
+
+                app.Run(top) |> ignore
+                0
+            finally
+                // Giải phóng hoàn toàn Terminal.Gui và khôi phục chế độ Terminal chuẩn
+                try (app :> IDisposable).Dispose() with _ -> ()
+                try top.Dispose() with _ -> ()
+                try
+                    // Tắt chuột SGR (?1006l), chuột mọi chuyển động (?1003l), chế độ dán (?2004l), thoát buffer phụ (?1049l), hiện con trỏ (?25h)
+                    let resetSeq = "\u001B[?1006l\u001B[?1015l\u001B[?1003l\u001B[?1002l\u001B[?1001l\u001B[?1000l\u001B[?2004l\u001B[?1049l\u001B[?25h\u001B[0m"
+                    Console.Write(resetSeq)
+                    Console.Out.Flush()
+                    Console.ResetColor()
+                    Console.CursorVisible <- true
+                with _ -> ()
