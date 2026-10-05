@@ -79,6 +79,8 @@ Milestone 2 đã hiện thực hóa thành công bộ khung kiến trúc luồng
 
 ## 3. KẾT QUẢ KIỂM THỬ NGHIỆM THU KỸ THUẬT (TEST RESULTS MATRIX)
 
+### 3.1. Ma trận Ca kiểm thử Nghiệm thu
+
 Toàn bộ 6 kịch bản kiểm thử nghiệm thu theo đặc tả tại Mục 7 của bản Thiết kế Chi tiết đã được thực thi và xác minh thành công 100%:
 
 | Mã Ca Kiểm Thử | Tên Kịch Bản Kiểm Thử | Tiêu Chí Đạt Nghiệm Thu | Kết Quả Thực Tế | Trạng Thái |
@@ -88,7 +90,18 @@ Toàn bộ 6 kịch bản kiểm thử nghiệm thu theo đặc tả tại Mục
 | **TC-M2-03** | Khởi tạo phiên Interactive Shell và khôi phục an toàn | Chạy interactive shell trên container Running; từ chối container không chạy (báo lỗi HTTP 409); bảo vệ an toàn `termios`. | Nhận diện đúng trạng thái hoạt động; chặn mở shell với container dừng; hoàn nguyên đầy đủ cấu hình terminal host. | **PASS** |
 | **TC-M2-04** | Co giãn cửa sổ Terminal thích ứng (Responsive Test) | Thu nhỏ cửa sổ dưới 80 cột tự động chuyển chế độ Single View không bị vỡ bố cục hay tràn viền bộ đệm. | Nhận diện chính xác ngưỡng Breakpoint (Compact 70x20, Standard 100x30, Expanded 160x40), phân bổ tỷ lệ 38%/62% chính xác. | **PASS** |
 | **TC-M2-05** | Tìm kiếm & Lọc mờ container theo tên | Nhấn `/`, gõ từ khóa lọc tức thời danh sách theo thời gian thực; nhấn `Esc` hoàn nguyên toàn bộ danh sách. | Lọc chính xác container theo từ khóa; reset `SelectedIndex` về 0; lệnh `ClearFilter` phục hồi 100% dữ liệu gốc. | **PASS** |
-| **TC-M2-06** | Hộp thoại xác nhận xóa an toàn | Nhấn `d` mở modal xác nhận; nhấn `Esc` hủy thao tác an toàn; nhấn `y` phát sinh lệnh xóa vĩnh viễn. | Modal hiển thị cảnh báo màu đỏ; hủy bỏ không xóa khi nhấn `Esc`; gửi lệnh xóa `DELETE` chính xác khi nhấn `y`. | **PASS** |
+| **TC-M2-06** | Hộp thoại xác nhận xóa an toàn | Nhấn `d` mở modal xác nhận; nhấn `Esc` hủy thao tác an toàn; nhấn `y` phát sinh lệnh xóa vĩnh viễn. | Modal hiển thị cảnh báo; hủy bỏ không xóa khi nhấn `Esc`; gửi lệnh xóa `DELETE` chính xác khi nhấn `y`. | **PASS** |
+
+### 3.2. Phương thức & Quy trình Nghiệm thu Thực tế
+
+Quy trình nghiệm thu Milestone 2 được tổ chức theo 2 phương thức bổ trợ lẫn nhau:
+1. **Kiểm thử Tự động Hóa (Automated Integration Test Suite):**
+   - Bộ kịch bản kiểm thử tích hợp tự động mô phỏng toàn bộ chu trình MVU, gửi thông điệp và xác thực tính đúng đắn của trạng thái mô hình cùng các chỉ thị bất đồng bộ gửi tới Podman Engine.
+   - Kiểm tra độc lập từng hàm nghiệp vụ: tính toán tọa độ bố cục thích ứng, lọc chuỗi mờ, chuyển tiếp phím tắt, bọc phiên shell tương tác, và cơ chế an toàn hủy xóa container.
+2. **Kiểm thử Tương tác Thực tế (Manual Interactive TUI Verification):**
+   - Khởi tạo các container mẫu ở các trạng thái khác nhau trên hệ điều hành host.
+   - Khởi động ứng dụng Dashboard TUI trực tiếp từ terminal, thực hiện điều hướng phím mũi tên và các phím tắt cốt lõi.
+   - Thu phóng kích thước cửa sổ console thực tế để thẩm định trực quan khả năng chống tràn viền và khả năng khôi phục toàn vẹn sau khi thoát shell PTY.
 
 ---
 
