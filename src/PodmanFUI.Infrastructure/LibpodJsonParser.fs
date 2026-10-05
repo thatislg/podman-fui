@@ -108,6 +108,6 @@ module LibpodJsonParser =
             Ok systemInfo
         with
         | :? JsonException as ex ->
-            Error (DeserializationError (sprintf "Lỗi giải mã cấu trúc JSON từ Podman API: %s" ex.Message))
+            Error (DeserializationError (sprintf "Failed to parse JSON response from Podman API: %s" ex.Message))
         | ex ->
-            Error (DeserializationError (sprintf "Lỗi không xác định khi phân giải dữ liệu: %s" ex.Message))
+            Error (DeserializationError (sprintf "Unexpected error while parsing Podman API data: %s" ex.Message))

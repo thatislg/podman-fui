@@ -1,8 +1,0 @@
-<Solution>
-  <Folder Name="/src/">
-    <Project Path="src/PodmanFUI.App/PodmanFUI.App.fsproj" />
-    <Project Path="src/PodmanFUI.Domain/PodmanFUI.Domain.fsproj" />
-    <Project Path="src/PodmanFUI.Infrastructure/PodmanFUI.Infrastructure.fsproj" />
-    <Project Path="src/PodmanFUI.Presentation/PodmanFUI.Presentation.fsproj" />
-  </Folder>
-</Solution>

@@ -102,27 +102,27 @@ module PocRenderer =
             | SocketNotFound (path, attempted, advice) ->
                 let attemptedList = String.concat "\n  - " attempted
                 ("ERR_SOCK_404",
-                 sprintf "Không tìm thấy Podman Socket tại: %s\nCác đường dẫn đã thử:\n  - %s" path attemptedList,
+                 sprintf "Podman Socket not found at: %s\nAttempted paths:\n  - %s" path attemptedList,
                  advice)
             | AccessDenied (path, msg) ->
                 ("ERR_SOCK_403",
-                 sprintf "Bị từ chối quyền truy cập vào socket tại: %s" path,
-                 sprintf "%s. Vui lòng kiểm tra quyền truy cập của user." msg)
+                 sprintf "Access denied to socket at: %s" path,
+                 sprintf "%s. Please verify user permissions." msg)
             | HttpFailure (statusCode, reason) ->
                 ("ERR_HTTP_500",
-                 sprintf "Động cơ Podman trả về mã lỗi HTTP %d" statusCode,
-                 sprintf "Nguyên nhân: %s" reason)
+                 sprintf "Podman Engine returned HTTP %d" statusCode,
+                 sprintf "Reason: %s" reason)
             | Timeout msg ->
                 ("ERR_CONN_TIMEOUT",
-                 "Kết nối tới Podman Socket bị quá thời gian (Timeout 10s)",
+                 "Connection to Podman Socket timed out (10s)",
                  msg)
             | DeserializationError msg ->
                 ("ERR_JSON_PARSE",
-                 "Không thể phân giải dữ liệu phản hồi từ Podman API",
+                 "Failed to deserialize response from Podman API",
                  msg)
 
         let panelContent =
-            sprintf "[bold red][[%s]][/] %s\n\n[bold yellow]Hướng dẫn khắc phục:[/] %s" errCode (Markup.Escape(errMsg)) (Markup.Escape(hint))
+            sprintf "[bold red][[%s]][/] %s\n\n[bold yellow]Remediation:[/] %s" errCode (Markup.Escape(errMsg)) (Markup.Escape(hint))
 
         let panel = new Panel(panelContent)
         panel.Header <- PanelHeader("[bold red] Podman Connection Failure [/]")

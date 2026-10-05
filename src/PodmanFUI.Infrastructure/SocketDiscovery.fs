@@ -37,7 +37,7 @@ module SocketDiscovery =
             if File.Exists(customPath) then
                 Discovered(customPath, Custom)
             else
-                NotFound(Seq.toList attemptedPaths, sprintf "Đường dẫn socket chỉ định trong biến môi trường không tồn tại: %s" customPath)
+                NotFound(Seq.toList attemptedPaths, sprintf "Socket path specified in environment variable does not exist: %s" customPath)
         | None ->
             // 2. Kiểm tra Rootless Socket của người dùng hiện tại
             let xdgRuntime = Environment.GetEnvironmentVariable("XDG_RUNTIME_DIR")
@@ -69,5 +69,5 @@ module SocketDiscovery =
                 else
                     NotFound(
                         Seq.toList attemptedPaths,
-                        "Dịch vụ Podman Socket chưa được kích hoạt. Hãy chạy lệnh: systemctl --user enable --now podman.socket"
+                        "Podman socket service is not active. Enable it with: systemctl --user enable --now podman.socket"
                     )

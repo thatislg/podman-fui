@@ -50,11 +50,11 @@ type PodmanSocketClient(socketPath: string, mode: SocketMode) =
                 | :? HttpRequestException as ex ->
                     match ex.InnerException with
                     | :? SocketException as sex when sex.SocketErrorCode = SocketError.AccessDenied ->
-                        return Error (AccessDenied (socketPath, sprintf "Bị từ chối quyền truy cập socket: %s" sex.Message))
+                        return Error (AccessDenied (socketPath, sprintf "Access denied to socket: %s" sex.Message))
                     | _ ->
                         return Error (HttpFailure (0, ex.Message))
                 | :? TaskCanceledException ->
-                    return Error (Timeout "Kết nối tới Podman socket bị quá thời gian (Timeout 10s)")
+                    return Error (Timeout "Connection to Podman socket timed out (10s)")
                 | ex ->
                     return Error (HttpFailure (0, ex.Message))
             }
