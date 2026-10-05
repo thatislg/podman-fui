@@ -3,6 +3,8 @@ namespace PodmanFUI.Presentation.Views
 open System
 open Terminal.Gui.Views
 open Terminal.Gui.ViewBase
+open Terminal.Gui.Drawing
+open PodmanFUI.Presentation
 open PodmanFUI.Domain.NavigationModels
 open PodmanFUI.Domain.MvuTypes
 
@@ -19,6 +21,7 @@ type ModalsView() as this =
         this.Y <- Pos.Center()
         this.Width <- Dim.Absolute(58)
         this.Height <- Dim.Absolute(10)
+        this.Border.LineStyle <- Nullable LineStyle.Rounded
         this.Visible <- false
 
         messageLabel.X <- Pos.Absolute(2)
@@ -52,6 +55,7 @@ type ModalsView() as this =
 
         | ConfirmActionDialog (action, containerId, containerName) ->
             this.Visible <- true
+            this.SetScheme(Theme.modalConfirmScheme) |> ignore
             inputField.Visible <- false
             let shortId = if containerId.Length > 12 then containerId.Substring(0, 12) else containerId
             this.Title <- sprintf " Confirm %A " action
@@ -60,7 +64,9 @@ type ModalsView() as this =
 
         | FilterInputDialog ->
             this.Visible <- true
+            this.SetScheme(Theme.modalFilterScheme) |> ignore
             inputField.Visible <- true
+            inputField.SetScheme(Theme.listViewScheme) |> ignore
             inputField.Text <- model.FilterQuery
             this.Title <- " Filter Containers "
             messageLabel.Text <- "Type keyword to filter containers by name or ID:"
@@ -68,6 +74,7 @@ type ModalsView() as this =
 
         | ErrorAlertDialog (title, message) ->
             this.Visible <- true
+            this.SetScheme(Theme.modalConfirmScheme) |> ignore
             inputField.Visible <- false
             this.Title <- sprintf " %s " title
             messageLabel.Text <- message

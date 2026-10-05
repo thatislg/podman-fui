@@ -4,7 +4,9 @@ namespace PodmanFUI.Presentation.Views
 open System
 open Terminal.Gui.Views
 open Terminal.Gui.ViewBase
+open Terminal.Gui.Drawing
 open Terminal.Gui.Input
+open PodmanFUI.Presentation
 open PodmanFUI.Domain.ContainerModels
 open PodmanFUI.Domain.NavigationModels
 open PodmanFUI.Domain.MvuTypes
@@ -19,6 +21,10 @@ type ContainerDetailView() as this =
 
     do
         this.Title <- " Container Details "
+        this.Border.LineStyle <- Nullable LineStyle.Rounded
+        this.SetScheme(Theme.panelUnfocusedScheme) |> ignore
+        tabHeader.SetScheme(Theme.panelFocusedScheme) |> ignore
+        textView.SetScheme(Theme.detailTextScheme) |> ignore
         tabHeader.X <- Pos.Absolute(0)
         tabHeader.Y <- Pos.Absolute(0)
         tabHeader.Width <- Dim.Fill()
@@ -169,6 +175,7 @@ type ContainerDetailView() as this =
     /// Cập nhật hiển thị DetailPane theo mô hình trạng thái MVU
     member this.Update(model: DashboardModel) =
         let isFocused = (model.CurrentFocus = ActiveFocus.DetailPane)
+        this.SetScheme(if isFocused then Theme.panelFocusedScheme else Theme.panelUnfocusedScheme) |> ignore
 
         match model.ActiveCategory with
         | NavigationCategory.Containers ->

@@ -4,6 +4,8 @@ open System
 open System.Collections.ObjectModel
 open Terminal.Gui.Views
 open Terminal.Gui.ViewBase
+open Terminal.Gui.Drawing
+open PodmanFUI.Presentation
 open PodmanFUI.Domain.ContainerModels
 open PodmanFUI.Domain.NavigationModels
 open PodmanFUI.Domain.MvuTypes
@@ -18,6 +20,10 @@ type SidebarView() as this =
 
     do
         this.Title <- " Containers "
+        this.Border.LineStyle <- Nullable LineStyle.Rounded
+        this.SetScheme(Theme.panelUnfocusedScheme) |> ignore
+        listView.SetScheme(Theme.listViewScheme) |> ignore
+        filterLabel.SetScheme(Theme.panelFocusedScheme) |> ignore
         filterLabel.X <- Pos.Absolute(0)
         filterLabel.Y <- Pos.Absolute(0)
         filterLabel.Width <- Dim.Fill()
@@ -70,6 +76,7 @@ type SidebarView() as this =
     /// Cập nhật hiển thị Sidebar theo mô hình trạng thái MVU
     member this.Update(model: DashboardModel, layoutMode: LayoutBreakpoint) =
         let isFocused = (model.CurrentFocus = ActiveFocus.Sidebar)
+        this.SetScheme(if isFocused then Theme.panelFocusedScheme else Theme.panelUnfocusedScheme) |> ignore
 
         match model.ActiveCategory with
         | NavigationCategory.Containers ->

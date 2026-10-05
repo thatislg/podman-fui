@@ -2,7 +2,9 @@ namespace PodmanFUI.Presentation.Views
 
 open Terminal.Gui.Views
 open Terminal.Gui.ViewBase
+open Terminal.Gui.Drawing
 open Terminal.Gui.Input
+open PodmanFUI.Presentation
 open PodmanFUI.Domain.NavigationModels
 open PodmanFUI.Domain.MvuTypes
 
@@ -16,6 +18,8 @@ type TopBarView() as this =
     do
         this.Height <- Dim.Absolute(1)
         this.Width <- Dim.Fill()
+        this.SetScheme(Theme.topBarScheme) |> ignore
+        label.SetScheme(Theme.topBarScheme) |> ignore
         label.X <- Pos.Absolute(1)
         label.Y <- Pos.Absolute(0)
         label.Width <- Dim.Fill()
