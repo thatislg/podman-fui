@@ -50,7 +50,17 @@ module MvuLoop =
                 { model with SelectedIndex = safeIdx; SelectedContainerId = Some item.Id }, cmd
 
         | CategoryChanged cat ->
-            { model with ActiveCategory = cat }, DashboardCmd.NoCmd
+            if cat = NavigationCategory.Containers then
+                let cmd =
+                    match model.SelectedContainerId with
+                    | Some id -> DashboardCmd.FetchDetail id
+                    | None ->
+                        match model.FilteredContainers with
+                        | head :: _ -> DashboardCmd.FetchDetail head.Id
+                        | [] -> DashboardCmd.FetchContainers
+                { model with ActiveCategory = cat }, cmd
+            else
+                { model with ActiveCategory = cat; DetailData = None }, DashboardCmd.NoCmd
 
         | TabChanged tab ->
             { model with ActiveTab = tab }, DashboardCmd.NoCmd
@@ -224,7 +234,7 @@ module MvuLoop =
                 | "4" -> update (CategoryChanged NavigationCategory.Volumes) model
                 | "5" -> update (CategoryChanged NavigationCategory.Networks) model
                 | "Tab" -> update ToggleFocus model
-                | "]" ->
+                | "]" | "Right" | "CursorRight" ->
                     let nextTab =
                         match model.ActiveTab with
                         | DetailTab.Logs -> DetailTab.Inspect
@@ -232,7 +242,7 @@ module MvuLoop =
                         | DetailTab.Top -> DetailTab.Env
                         | DetailTab.Env -> DetailTab.Logs
                     update (TabChanged nextTab) model
-                | "[" ->
+                | "[" | "Left" | "CursorLeft" ->
                     let prevTab =
                         match model.ActiveTab with
                         | DetailTab.Logs -> DetailTab.Env
@@ -241,21 +251,19 @@ module MvuLoop =
                         | DetailTab.Env -> DetailTab.Top
                     update (TabChanged prevTab) model
                 | "j" | "Down" | "CursorDown" ->
-                    if model.FilteredContainers.IsEmpty then
-                        model, DashboardCmd.NoCmd
-                    else
+                    if model.ActiveCategory = NavigationCategory.Containers && not model.FilteredContainers.IsEmpty then
                         let nextIdx = min (model.FilteredContainers.Length - 1) (model.SelectedIndex + 1)
                         update (RowSelected nextIdx) model
-                | "k" | "Up" | "CursorUp" ->
-                    if model.FilteredContainers.IsEmpty then
-                        model, DashboardCmd.NoCmd
                     else
+                        model, DashboardCmd.NoCmd
+                | "k" | "Up" | "CursorUp" ->
+                    if model.ActiveCategory = NavigationCategory.Containers && not model.FilteredContainers.IsEmpty then
                         let prevIdx = max 0 (model.SelectedIndex - 1)
                         update (RowSelected prevIdx) model
-                | "s" ->
-                    if model.FilteredContainers.IsEmpty || model.SelectedIndex < 0 || model.SelectedIndex >= model.FilteredContainers.Length then
-                        model, DashboardCmd.NoCmd
                     else
+                        model, DashboardCmd.NoCmd
+                | "s" ->
+                    if model.ActiveCategory = NavigationCategory.Containers && not model.FilteredContainers.IsEmpty && model.SelectedIndex >= 0 && model.SelectedIndex < model.FilteredContainers.Length then
                         let c = model.FilteredContainers.[model.SelectedIndex]
                         match c.Status with
                         | ContainerStatus.Running ->
@@ -267,16 +275,16 @@ module MvuLoop =
                         | ContainerStatus.Restarting
                         | ContainerStatus.Dead ->
                             update (RequestAction (ContainerAction.Start, c.Id)) model
-                | "r" ->
-                    if model.FilteredContainers.IsEmpty || model.SelectedIndex < 0 || model.SelectedIndex >= model.FilteredContainers.Length then
-                        model, DashboardCmd.NoCmd
                     else
+                        model, DashboardCmd.NoCmd
+                | "r" ->
+                    if model.ActiveCategory = NavigationCategory.Containers && not model.FilteredContainers.IsEmpty && model.SelectedIndex >= 0 && model.SelectedIndex < model.FilteredContainers.Length then
                         let c = model.FilteredContainers.[model.SelectedIndex]
                         update (RequestAction (ContainerAction.Restart, c.Id)) model
-                | "p" ->
-                    if model.FilteredContainers.IsEmpty || model.SelectedIndex < 0 || model.SelectedIndex >= model.FilteredContainers.Length then
-                        model, DashboardCmd.NoCmd
                     else
+                        model, DashboardCmd.NoCmd
+                | "p" ->
+                    if model.ActiveCategory = NavigationCategory.Containers && not model.FilteredContainers.IsEmpty && model.SelectedIndex >= 0 && model.SelectedIndex < model.FilteredContainers.Length then
                         let c = model.FilteredContainers.[model.SelectedIndex]
                         match c.Status with
                         | ContainerStatus.Running ->
@@ -285,21 +293,26 @@ module MvuLoop =
                             update (RequestAction (ContainerAction.Unpause, c.Id)) model
                         | _ ->
                             model, DashboardCmd.NoCmd
-                | "d" ->
-                    if model.FilteredContainers.IsEmpty || model.SelectedIndex < 0 || model.SelectedIndex >= model.FilteredContainers.Length then
-                        model, DashboardCmd.NoCmd
                     else
+                        model, DashboardCmd.NoCmd
+                | "d" ->
+                    if model.ActiveCategory = NavigationCategory.Containers && not model.FilteredContainers.IsEmpty && model.SelectedIndex >= 0 && model.SelectedIndex < model.FilteredContainers.Length then
                         let c = model.FilteredContainers.[model.SelectedIndex]
                         let modal = ConfirmActionDialog (ContainerAction.Delete, c.Id, c.PrimaryName)
                         { model with ActiveModal = modal }, DashboardCmd.NoCmd
-                | "e" ->
-                    if model.FilteredContainers.IsEmpty || model.SelectedIndex < 0 || model.SelectedIndex >= model.FilteredContainers.Length then
-                        model, DashboardCmd.NoCmd
                     else
+                        model, DashboardCmd.NoCmd
+                | "e" ->
+                    if model.ActiveCategory = NavigationCategory.Containers && not model.FilteredContainers.IsEmpty && model.SelectedIndex >= 0 && model.SelectedIndex < model.FilteredContainers.Length then
                         let c = model.FilteredContainers.[model.SelectedIndex]
                         update (RequestAction (ContainerAction.ExecShell, c.Id)) model
+                    else
+                        model, DashboardCmd.NoCmd
                 | "/" ->
-                    { model with IsFilterActive = true; ActiveModal = FilterInputDialog }, DashboardCmd.NoCmd
+                    if model.ActiveCategory = NavigationCategory.Containers then
+                        { model with IsFilterActive = true; ActiveModal = FilterInputDialog }, DashboardCmd.NoCmd
+                    else
+                        model, DashboardCmd.NoCmd
                 | _ ->
                     model, DashboardCmd.NoCmd
 
@@ -350,6 +363,18 @@ module MvuLoop =
             detailView.Update(m)
 
             modalsView.Update(m)
+
+            // Cập nhật Terminal.Gui focus dựa theo m.CurrentFocus
+            match m.CurrentFocus with
+            | ActiveFocus.Sidebar ->
+                sidebar.SetFocus() |> ignore
+            | ActiveFocus.DetailPane ->
+                detailView.SetFocus() |> ignore
+            | ActiveFocus.ModalDialog ->
+                if modalsView.Visible && modalsView.InputField.Visible then
+                    modalsView.InputField.SetFocus() |> ignore
+                elif modalsView.Visible then
+                    modalsView.SetFocus() |> ignore
 
         let rec dispatch (msg: DashboardMsg) =
             let (newModel, cmd) = update msg model
@@ -421,23 +446,113 @@ module MvuLoop =
             top.Add(footerView) |> ignore
             top.Add(modalsView) |> ignore
 
-            // Gắn kết phím tắt bàn phím
-            top.KeyDown.Add(fun (key: Key) ->
-                if key = Key.Q && model.ActiveModal = Closed && not model.IsFilterActive then
-                    key.Handled <- true
-                    app.RequestStop()
-                else
-                    let keyStr =
-                        if key = Key.Esc then "Escape"
-                        elif key = Key.Enter then "Enter"
-                        elif key = Key.Tab then "Tab"
-                        elif key = Key.CursorUp then "Up"
-                        elif key = Key.CursorDown then "Down"
-                        elif not (String.IsNullOrEmpty key.AsGrapheme) then key.AsGrapheme
-                        else key.ToString()
+            // Gắn kết sự kiện chuột (Mouse Event Listeners)
+            topBar.CategoryClicked.Add(fun cat ->
+                dispatch (CategoryChanged cat)
+            )
 
-                    key.Handled <- true
-                    dispatch (KeyPressed keyStr)
+            detailView.TabClicked.Add(fun tab ->
+                dispatch (TabChanged tab)
+            )
+
+            sidebar.ListView.ValueChanged.Add(fun e ->
+                if e.NewValue.HasValue && model.ActiveCategory = NavigationCategory.Containers then
+                    let newIdx = e.NewValue.Value
+                    if newIdx <> model.SelectedIndex && newIdx >= 0 && newIdx < model.FilteredContainers.Length then
+                        dispatch (RowSelected newIdx)
+            )
+
+            // Gắn kết bàn phím toàn cục (Global Keyboard Hook qua app.Keyboard.KeyDown)
+            app.Keyboard.KeyDown.Add(fun (key: Key) ->
+                match model.ActiveModal with
+                | ConfirmActionDialog _ ->
+                    let baseKey = key.NoShift.NoCtrl.NoAlt
+                    if baseKey = Key.Y || baseKey = Key.Enter then
+                        key.Handled <- true
+                        dispatch ConfirmModal
+                    elif baseKey = Key.N || baseKey = Key.Esc then
+                        key.Handled <- true
+                        dispatch DismissModal
+                | FilterInputDialog ->
+                    let baseKey = key.NoShift.NoCtrl.NoAlt
+                    if baseKey = Key.Enter then
+                        key.Handled <- true
+                        dispatch (UpdateFilter modalsView.InputField.Text)
+                        dispatch ConfirmModal
+                    elif baseKey = Key.Esc then
+                        key.Handled <- true
+                        dispatch ClearFilter
+                    // Không đánh dấu Handled để TextField nhận phím gõ bình thường
+                | ErrorAlertDialog _ ->
+                    let baseKey = key.NoShift.NoCtrl.NoAlt
+                    if baseKey = Key.Enter || baseKey = Key.Esc then
+                        key.Handled <- true
+                        dispatch DismissModal
+                | Closed ->
+                    let baseKey = key.NoShift.NoCtrl.NoAlt
+                    if baseKey = Key.Q then
+                        key.Handled <- true
+                        app.RequestStop()
+                    elif baseKey = Key.D1 then
+                        key.Handled <- true
+                        dispatch (CategoryChanged NavigationCategory.Pods)
+                    elif baseKey = Key.D2 then
+                        key.Handled <- true
+                        dispatch (CategoryChanged NavigationCategory.Containers)
+                    elif baseKey = Key.D3 then
+                        key.Handled <- true
+                        dispatch (CategoryChanged NavigationCategory.Images)
+                    elif baseKey = Key.D4 then
+                        key.Handled <- true
+                        dispatch (CategoryChanged NavigationCategory.Volumes)
+                    elif baseKey = Key.D5 then
+                        key.Handled <- true
+                        dispatch (CategoryChanged NavigationCategory.Networks)
+                    elif baseKey = Key.Tab then
+                        key.Handled <- true
+                        dispatch ToggleFocus
+                    elif baseKey = Key.F1 then
+                        key.Handled <- true
+                        dispatch (TabChanged DetailTab.Logs)
+                    elif baseKey = Key.F2 then
+                        key.Handled <- true
+                        dispatch (TabChanged DetailTab.Inspect)
+                    elif baseKey = Key.F3 then
+                        key.Handled <- true
+                        dispatch (TabChanged DetailTab.Top)
+                    elif baseKey = Key.F4 then
+                        key.Handled <- true
+                        dispatch (TabChanged DetailTab.Env)
+                    elif baseKey = Key.CursorLeft || baseKey = Key(int '[') then
+                        key.Handled <- true
+                        dispatch (KeyPressed "[")
+                    elif baseKey = Key.CursorRight || baseKey = Key(int ']') then
+                        key.Handled <- true
+                        dispatch (KeyPressed "]")
+                    elif baseKey = Key.CursorUp || baseKey = Key.K then
+                        key.Handled <- true
+                        dispatch (KeyPressed "k")
+                    elif baseKey = Key.CursorDown || baseKey = Key.J then
+                        key.Handled <- true
+                        dispatch (KeyPressed "j")
+                    elif baseKey = Key.S then
+                        key.Handled <- true
+                        dispatch (KeyPressed "s")
+                    elif baseKey = Key.R then
+                        key.Handled <- true
+                        dispatch (KeyPressed "r")
+                    elif baseKey = Key.P then
+                        key.Handled <- true
+                        dispatch (KeyPressed "p")
+                    elif baseKey = Key.D then
+                        key.Handled <- true
+                        dispatch (KeyPressed "d")
+                    elif baseKey = Key.E then
+                        key.Handled <- true
+                        dispatch (KeyPressed "e")
+                    elif baseKey = Key(int '/') then
+                        key.Handled <- true
+                        dispatch (KeyPressed "/")
             )
 
             // Gắn kết thay đổi kích thước terminal

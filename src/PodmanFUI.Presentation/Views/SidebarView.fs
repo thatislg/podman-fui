@@ -5,10 +5,11 @@ open System.Collections.ObjectModel
 open Terminal.Gui.Views
 open Terminal.Gui.ViewBase
 open PodmanFUI.Domain.ContainerModels
+open PodmanFUI.Domain.NavigationModels
 open PodmanFUI.Domain.MvuTypes
 open PodmanFUI.Presentation.ResponsiveLayoutManager
 
-/// Khung danh sách Container bên trái (Sidebar)
+/// Khung danh sách tài nguyên bên trái (Sidebar)
 type SidebarView() as this =
     inherit FrameView()
 
@@ -68,27 +69,50 @@ type SidebarView() as this =
 
     /// Cập nhật hiển thị Sidebar theo mô hình trạng thái MVU
     member this.Update(model: DashboardModel, layoutMode: LayoutBreakpoint) =
-        this.Title <- sprintf " Containers (%d) " model.FilteredContainers.Length
+        let isFocused = (model.CurrentFocus = ActiveFocus.Sidebar)
 
-        // Cập nhật thanh hiển thị từ khóa lọc
-        if model.IsFilterActive || not (String.IsNullOrEmpty model.FilterQuery) then
-            filterLabel.Visible <- true
-            filterLabel.Text <- sprintf "Filter: %s" model.FilterQuery
-            listView.Y <- Pos.Absolute(1)
-        else
+        match model.ActiveCategory with
+        | NavigationCategory.Containers ->
+            let titleText = sprintf "Containers (%d)" model.FilteredContainers.Length
+            this.Title <- if isFocused then sprintf " ▶ %s ◀ " titleText else sprintf " %s " titleText
+
+            // Cập nhật thanh hiển thị từ khóa lọc
+            if model.IsFilterActive || not (String.IsNullOrEmpty model.FilterQuery) then
+                filterLabel.Visible <- true
+                filterLabel.Text <- sprintf "Filter: %s" model.FilterQuery
+                listView.Y <- Pos.Absolute(1)
+            else
+                filterLabel.Visible <- false
+                listView.Y <- Pos.Absolute(0)
+
+            // Cập nhật danh sách các container
+            let items =
+                if model.FilteredContainers.IsEmpty then
+                    [ "  (No containers found)" ]
+                else
+                    model.FilteredContainers
+                    |> List.map (formatItem layoutMode)
+
+            let collection = ObservableCollection<string>(items)
+            listView.SetSource(collection)
+
+            if not model.FilteredContainers.IsEmpty && model.SelectedIndex >= 0 && model.SelectedIndex < items.Length then
+                listView.SelectedItem <- model.SelectedIndex
+
+        | otherCat ->
+            let catName = sprintf "%A" otherCat
+            this.Title <- if isFocused then sprintf " ▶ %s (0) ◀ " catName else sprintf " %s (0) " catName
             filterLabel.Visible <- false
             listView.Y <- Pos.Absolute(0)
 
-        // Cập nhật danh sách các container
-        let items =
-            if model.FilteredContainers.IsEmpty then
-                [ "  (No containers found)" ]
-            else
-                model.FilteredContainers
-                |> List.map (formatItem layoutMode)
+            let items =
+                [ sprintf "  (No %s available)" catName
+                  ""
+                  sprintf "  %s management feature" catName
+                  "  is scheduled for Milestone 4."
+                  ""
+                  "  ► Press [2] to return to Containers" ]
 
-        let collection = ObservableCollection<string>(items)
-        listView.SetSource(collection)
-
-        if not model.FilteredContainers.IsEmpty && model.SelectedIndex >= 0 && model.SelectedIndex < items.Length then
-            listView.SelectedItem <- model.SelectedIndex
+            let collection = ObservableCollection<string>(items)
+            listView.SetSource(collection)
+            listView.SelectedItem <- 0
