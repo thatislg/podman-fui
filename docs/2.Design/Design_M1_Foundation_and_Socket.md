@@ -1,10 +1,10 @@
-# BẢN THIẾT KẾ KỸ THUẬT BẰNG LỜI: MILESTONE 1
-## THIẾT KẾ NỀN TẢNG SOLUTION F# & GIAO TIẾP UNIX DOMAIN SOCKET
+# BẢN THIẾT KẾ CHI TIẾT (DETAIL DESIGN): MILESTONE 1
+## NỀN TẢNG SOLUTION F# & GIAO TIẾP UNIX DOMAIN SOCKET
 
-- **Mã tài liệu:** DES-M1-FOUNDATION-SOCKET
+- **Mã tài liệu:** DD-M1-FOUNDATION-SOCKET
 - **Vị trí lưu trữ:** `docs/2.Design/Design_M1_Foundation_and_Socket.md`
-- **Phiên bản:** 1.0.0
-- **Trạng thái:** Bản thiết kế đã phê duyệt (Approved)
+- **Phiên bản:** 2.0.0 (Nâng cấp từ Basic Design lên Detail Design)
+- **Ngày phê duyệt:** 2026-10-05
 - **Tài liệu căn cứ:** 
   - [`SRS_podman-FUI.md`](../1.Investigation/SRS_podman-FUI.md)
   - [`01_Podman_Socket_and_API_Investigation.md`](../1.Investigation/01_Podman_Socket_and_API_Investigation.md)
@@ -12,158 +12,222 @@
 
 ---
 
-## 1. MỤC TIÊU THIẾT KẾ
-Tài liệu này đặc tả chi tiết bằng lời (Textual Specification) kiến trúc nền tảng cho Milestone 1 trước khi tiến hành viết mã:
-1. Thiết kế phân rã cấu trúc thư mục mã nguồn và tổ chức Solution F# theo tiêu chuẩn Clean Architecture.
-2. Thiết kế logic tầng giao tiếp Unix Domain Socket của Podman Engine bằng lời văn mô tả luồng dữ liệu, thuật toán tự động nhận diện socket, và cấu trúc hợp đồng dữ liệu (Data Contracts).
-3. Thiết kế kịch bản xử lý ngoại lệ và luồng nghiệm thu chương trình thử nghiệm (PoC).
+## 1. TỔNG QUAN & PHẠM VI THIẾT KẾ CHI TIẾT
+
+Tài liệu này nâng cấp toàn bộ nội dung từ mức Thiết kế Cơ sở (Basic Design) lên **Thiết kế Chi tiết (Detail Design)** cho Milestone 1:
+- Định rõ từng tệp mã nguồn trong từng dự án thành phần.
+- Đặc tả chi tiết từng trường dữ liệu của Data Contracts (kiểu dữ liệu, ánh xạ JSON, quy tắc kiểm tra).
+- Đặc tả chi tiết từng hàm nghiệp vụ: tham số đầu vào, kiểu dữ liệu trả về, thuật toán tuần tự từng bước (Procedural Steps).
+- Bảng ma trận mã lỗi chi tiết và các ca kiểm thử nghiệm thu (Test Cases).
+- **Tuân thủ tuyệt đối:** Toàn bộ bản thiết kế được diễn giải bằng lời văn, bảng biểu, lược đồ, không sử dụng đoạn mã lập trình cụ thể (Zero Code Sample).
 
 ---
 
-## 2. THIẾT KẾ CẤU TRÚC THƯ MỤC & TỔ CHỨC SOLUTION F#
+## 2. PHÂN RÃ DANH MỤC TỆP & MÔ-ĐUN MÃ NGUỒN (MODULE INVENTORY)
 
-### 2.1. Cấu trúc Cây Thư mục Dự án
+Toàn bộ Solution `podman-FUI.sln` được phân rã thành 4 dự án với danh mục tệp chi tiết:
 
-```
-podman-FUI/
-├── docs/                               # Toàn bộ tài liệu dự án
-│   ├── 1.Investigation/                # Khảo sát & SRS
-│   ├── 2.Design/                       # Các bản thiết kế kỹ thuật bằng lời
-│   └── 3.Progress/                     # Lộ trình & Theo dõi tiến độ
-├── src/                                # Mã nguồn ứng dụng
-│   ├── PodmanFUI.Domain/               # Tầng dữ liệu nghiệp vụ thuần F# (Không phụ thuộc bên ngoài)
-│   ├── PodmanFUI.Infrastructure/       # Tầng hạ tầng: Giao tiếp Unix Socket, HTTP Client
-│   ├── PodmanFUI.Presentation/         # Tầng giao diện: Terminal.Gui Views & Spectre Renderers
-│   └── PodmanFUI.App/                  # Dự án Console chính: Điểm khởi chạy (Entry Point) & Vòng lặp MVU
-├── tests/                              # Dự án kiểm thử tự động
-│   └── PodmanFUI.Tests/                # Unit Test & Integration Test
-├── packaging/                          # Kịch bản và tệp mẫu đóng gói .deb, .rpm
-│   ├── deb/                            # Cấu trúc DEBIAN/control và script postinst
-│   └── rpm/                            # RPM spec file
-├── podman-FUI.sln                      # Tệp Solution quản lý chung của .NET
-├── .gitignore                          # Cấu hình bỏ qua tệp tạm và tệp build
-└── README.md                           # Giới thiệu dự án
-```
+### 2.1. Dự án `PodmanFUI.Domain` (Target: .NET 10 / net10.0)
+- **Tệp 1: `Errors.fs` (Mô-đun quản lý mã lỗi & ngoại lệ miền):**
+  - Định nghĩa tập hợp các trường hợp lỗi kết nối (`ConnectionError`) và lỗi phân giải dữ liệu.
+- **Tệp 2: `Models.fs` (Mô-đun định nghĩa cấu trúc dữ liệu miền):**
+  - Chứa các kiểu bản ghi (Record Types): `CgroupInfo`, `HostInfo`, `VersionInfo`, `SystemInfo`.
+  - Chứa kiểu phân loại chế độ socket: `SocketMode` (`Rootless`, `Rootful`, `Custom`).
+  - Chứa kết quả dò tìm socket: `SocketDiscoveryResult` (`Discovered`, `NotFound`).
+- **Tệp 3: `ISocketClient.fs` (Giao diện trừu tượng tầng Socket):**
+  - Định nghĩa hợp đồng interface `IPodmanSocketClient` với phương thức bất đồng bộ `GetSystemInfoAsync`.
 
-### 2.2. Phân công Trách nhiệm từng Dự án (Separation of Concerns)
+### 2.2. Dự án `PodmanFUI.Infrastructure` (Target: .NET 10 / net10.0)
+- **Tệp 1: `SocketDiscovery.fs` (Mô-đun dò tìm socket tự động):**
+  - Chứa hàm `discoverSocket: unit -> SocketDiscoveryResult`.
+  - Chứa hàm phụ trợ chuẩn hóa đường dẫn URI `normalizePath: string -> string`.
+- **Tệp 2: `LibpodJsonParser.fs` (Mô-đun bóc tách JSON phản hồi):**
+  - Chứa hàm phân giải JSON chuyên biệt: `parseSystemInfo: string -> string -> SocketMode -> Result<SystemInfo, ConnectionError>`.
+- **Tệp 3: `PodmanSocketClient.fs` (Bộ điều phối kết nối vật lý):**
+  - Hiện thực hóa giao diện `IPodmanSocketClient`.
+  - Quản lý vòng đời của `SocketsHttpHandler` và `HttpClient`.
 
-1. **`PodmanFUI.Domain` (Thư viện F# thuần khiết):**
-   - Không chứa bất kỳ thư viện ngoài nào (kể cả thư viện UI lẫn HTTP).
-   - Định nghĩa các kiểu dữ liệu cốt lõi (Record Types) và máy trạng thái (Discriminated Unions) cho các thực thể: Pod, Container, Image, Volume, Network, HostInfo.
-   - Định nghĩa các giao diện trừu tượng (Interfaces) cho dịch vụ Socket.
+### 2.3. Dự án `PodmanFUI.Presentation` (Target: .NET 10 / net10.0)
+- **Tệp 1: `Theme.fs` (Mô-đun bảng màu & phong cách hiển thị):**
+  - Định nghĩa các mã màu ANSI chuẩn: Màu chủ đạo (Cyan), Màu thành công (Green), Màu cảnh báo (Yellow), Màu lỗi (Red), Màu viền bảng (DarkCyan).
+- **Tệp 2: `PocRenderer.fs` (Mô-đun xuất dữ liệu PoC):**
+  - Chứa hàm render thông điệp chào mừng: `renderWelcomeBanner: unit -> unit`.
+  - Chứa hàm vẽ bảng Spectre Table: `renderSystemInfoTable: SystemInfo -> unit`.
+  - Chứa hàm hiển thị cảnh báo lỗi: `renderErrorDialog: ConnectionError -> unit`.
 
-2. **`PodmanFUI.Infrastructure` (Thư viện F# Hạ tầng):**
-   - Phụ thuộc vào `PodmanFUI.Domain`.
-   - Đảm nhiệm việc kết nối vật lý vào file Unix Domain Socket (`.sock`).
-   - Xây dựng HTTP Client tùy biến sử dụng `SocketsHttpHandler` của .NET.
-   - Thực hiện serialization / deserialization JSON giữa đối tượng F# và phản hồi của Libpod REST API.
-
-3. **`PodmanFUI.Presentation` (Thư viện F# Giao diện):**
-   - Phụ thuộc vào `PodmanFUI.Domain`.
-   - Tham chiếu các gói NuGet giao diện: `Terminal.Gui` (v2) và `Spectre.Console`.
-   - Chứa các User Controls, Custom Canvas, Bảng hiển thị, Cửa sổ Modal và Module chuyển đổi màu sắc ANSI.
-
-4. **`PodmanFUI.App` (Chương trình Console F# thực thi):**
-   - Dự án tích hợp đầu não, tham chiếu cả 3 dự án trên.
-   - Chứa hàm `main` khởi chạy, bộ nạp tham số dòng lệnh (CLI arguments), cơ chế bắt tín hiệu hệ thống (`SIGWINCH`, `SIGINT`), và bộ điều phối vòng lặp Elmish MVU.
+### 2.4. Dự án `PodmanFUI.App` (Target: .NET 10 / net10.0 - Console Executable)
+- **Tệp 1: `Program.fs` (Điểm thực thi chính):**
+  - Chứa hàm `main: string[] -> int` điều phối luồng chạy kiểm thử nghiệm thu PoC.
 
 ---
 
-## 3. THIẾT KẾ CHI TIẾT TẦNG GIAO TIẾP UNIX DOMAIN SOCKET
+## 3. ĐẶC TẢ CHI TIẾT HỢP ĐỒNG DỮ LIỆU (DATA CONTRACTS SPECIFICATION)
 
-### 3.1. Thuật toán Tự động Nhận diện Đường dẫn Socket (Auto-Discovery Flow)
-Quy trình nhận diện đường dẫn socket được thiết kế tuần tự theo các bước ưu tiên:
+### 3.1. Hợp đồng `CgroupInfo`
+Mô tả hiện trạng phân hệ Cgroup của máy chủ Linux:
 
-```mermaid
-flowchart TD
-    StartStep["Khởi động kiểm tra Socket"] --> CheckEnv{"Kiểm tra biến môi trường CONTAINER_HOST hoặc PODMAN_SOCKET?"}
-    
-    CheckEnv -->|Có khai báo| UseEnvPath["Sử dụng đường dẫn từ biến môi trường"]
-    CheckEnv -->|Không khai báo| CheckRootless{"Kiểm tra file socket tại: XDG_RUNTIME_DIR/podman/podman.sock?"}
-    
-    CheckRootless -->|Tệp tồn tại| UseRootless["Xác định chế độ: Rootless Mode"]
-    CheckRootless -->|Không tồn tại| CheckRootful{"Kiểm tra file socket tại: /run/podman/podman.sock?"}
-    
-    CheckRootful -->|Tệp tồn tại| UseRootful["Xác định chế độ: Rootful Mode"]
-    CheckRootful -->|Không tồn tại| RaiseError["Phát sinh trạng thái lỗi: SocketNotFoundException"]
-    
-    UseEnvPath --> VerifyAccess["Kiểm tra quyền đọc/ghi trên tệp socket"]
-    UseRootless --> VerifyAccess
-    UseRootful --> VerifyAccess
-    
-    VerifyAccess -->|Thành công| InitHttpClient["Khởi tạo HttpClient gắn Unix Domain Socket"]
-    VerifyAccess -->|Thất bại| PermissionError["Phát sinh trạng thái lỗi: PermissionDeniedException"]
-```
+| Tên trường | Kiểu dữ liệu | Đường dẫn ánh xạ JSON từ API `/info` | Bắt buộc | Mô tả & Quy tắc kiểm tra |
+| :--- | :--- | :--- | :---: | :--- |
+| `Version` | `string` | `host.cgroupVersion` | Có | Phiên bản Cgroup. Chuỗi hợp lệ: `"v1"` hoặc `"v2"`. |
+| `Manager` | `string` | `host.cgroupManager` | Có | Trình điều khiển Cgroup. Giá trị chuẩn: `"systemd"` hoặc `"cgroupfs"`. |
+| `Controllers` | `string list` | `host.cgroupControllers` | Không | Mảng danh sách các bộ điều khiển được ủy quyền (ví dụ `["cpu", "memory", "pids"]`). Nếu thiếu, gán danh sách rỗng. |
 
-- **Mô tả chi tiết các bước:**
-  - **Bước 1 (Biến môi trường):** Đọc chuỗi kết nối từ `CONTAINER_HOST`. Nếu có tiền tố `unix://`, bóc tách đường dẫn file cục bộ.
-  - **Bước 2 (Chế độ Rootless):** Truy vấn biến `$XDG_RUNTIME_DIR` (thường là `/run/user/<UID>`). Ghép chuỗi tạo thành `/run/user/<UID>/podman/podman.sock`. Kiểm tra sự tồn tại vật lý của file trên hệ thống tệp.
-  - **Bước 3 (Chế độ Rootful):** Kiểm tra đường dẫn cố định của hệ thống `/run/podman/podman.sock`.
-  - **Bước 4 (Xử lý khi không thấy):** Nếu cả 3 bước đều thất bại, trả về đối tượng lỗi có cấu trúc, chứa thông điệp hướng dẫn người dùng lệnh kích hoạt socket Systemd.
+### 3.2. Hợp đồng `HostInfo`
+Mô tả chi tiết phần cứng và cấu hình động cơ Podman:
 
-### 3.2. Thiết kế Cơ chế Kết nối Vật lý (Physical Connection Mechanics)
-- Tầng hạ tầng không sử dụng địa chỉ IP hay cổng TCP mạng nội bộ, mà mở trực tiếp một kết nối luồng (Stream Socket) thuộc họ địa chỉ `AddressFamily.Unix` (AF_UNIX).
-- Sử dụng cơ chế kết nối ủy thác (Custom Connect Callback) bên trong cấu hình `SocketsHttpHandler` của .NET.
-- Khi một yêu cầu HTTP được phát đi, Handler tạo một socket Unix, thực hiện lệnh `Connect` trực tiếp tới tệp socket trên ổ cứng, và bọc socket đó vào một luồng dữ liệu mạng (`NetworkStream`) để truyền tải giao thức HTTP/1.1 tiêu chuẩn.
-- Địa chỉ gốc (Base Address) của HTTP Client được đặt quy ước là `http://d/v4.0.0/libpod/` (trong đó `d` là tên máy chủ giả lập, vì giao tiếp Unix Socket không quan tâm đến tên miền hay IP).
+| Tên trường | Kiểu dữ liệu | Đường dẫn ánh xạ JSON từ API `/info` | Bắt buộc | Mô tả & Quy tắc kiểm tra |
+| :--- | :--- | :--- | :---: | :--- |
+| `Arch` | `string` | `host.arch` | Có | Kiến trúc phần cứng (ví dụ `"amd64"`, `"arm64"`). |
+| `OS` | `string` | `host.os` | Có | Tên hệ điều hành nhân (ví dụ `"linux"`). |
+| `Kernel` | `string` | `host.kernel` | Có | Phiên bản bản dựng Linux Kernel (ví dụ `"7.0.0-34-generic"`). |
+| `Cgroup` | `CgroupInfo` | Đối tượng `host` | Có | Đối tượng lồng nhau mô tả chi tiết Cgroup. |
+| `StorageDriver` | `string` | `store.graphDriverName` | Không | Tên driver lưu trữ (ví dụ `"overlay"`). Mặc định là `"unknown"`. |
+| `GraphRoot` | `string` | `store.graphRoot` | Không | Đường dẫn thư mục dữ liệu (ví dụ `"/home/user/.local/share/containers/storage"`). |
+| `Rootless` | `bool` | Suy luận từ `SocketMode` & `store.graphRoot` | Có | `true` nếu chạy ở quyền người dùng unprivileged, `false` nếu root. |
+| `ConmonVersion`| `string` | `host.conmon.version` | Không | Phiên bản tiến trình giám sát container conmon. |
 
----
+### 3.3. Hợp đồng `VersionInfo`
+Mô tả phiên bản phần mềm Podman:
 
-## 4. THIẾT KẾ CẤU TRÚC HỢP ĐỒNG DỮ LIỆU (DATA CONTRACTS) CHO POC
+| Tên trường | Kiểu dữ liệu | Đường dẫn ánh xạ JSON từ API `/info` | Bắt buộc | Mô tả |
+| :--- | :--- | :--- | :---: | :--- |
+| `Version` | `string` | `version.Version` | Có | Số phiên bản Podman (ví dụ `"4.9.3"`). |
+| `ApiVersion` | `string` | `version.APIVersion` | Có | Phiên bản API Libpod tương ứng (ví dụ `"4.9.3"`). |
+| `GoVersion` | `string` | `version.GoVersion` | Không | Phiên bản trình biên dịch Go đã build Podman. |
+| `GitCommit` | `string` | `version.GitCommit` | Không | Mã băm Git commit của bản build. |
+| `BuiltTime` | `string` | `version.BuildTime` | Không | Thời điểm build phần mềm. |
 
-Để phục vụ kiểm thử nghiệm thu PoC trong Milestone 1, cấu trúc dữ liệu phản hồi từ endpoint `GET /v4.0.0/libpod/info` được phân rã thành các hợp đồng dữ liệu sau:
-
-### 4.1. Hợp đồng Thông tin Máy chủ Host (`HostInfo`)
-- **Kiến trúc phần cứng & Hệ điều hành:** Chuỗi định danh kiến trúc (`Arch`: ví dụ `amd64`, `arm64`), Hệ điều hành (`OS`: `linux`), Phiên bản nhân Kernel (`Kernel`).
-- **Phân hệ Quản lý Cgroup:**
-  - Phiên bản Cgroup (`CgroupVersion`: chuỗi `v1` hoặc `v2`).
-  - Trình quản lý Cgroup (`CgroupManager`: `systemd` hoặc `cgroupfs`).
-  - Danh sách các bộ điều khiển được ủy quyền (`CgroupControllers`: mảng chuỗi gồm `cpu`, `memory`, `pids`).
-- **Phân hệ Lưu trữ (Storage):**
-  - Trình điều khiển lưu trữ (`GraphDriverName`: ví dụ `overlay`).
-  - Đường dẫn thư mục lưu trữ gốc (`GraphRoot`).
-- **Chế độ Vận hành:** Giá trị logic xác định có phải đang chạy Rootless hay không (`SecurityInfo.Rootless`).
-
-### 4.2. Hợp đồng Thông tin Phiên bản Động cơ (`VersionInfo`)
-- Phiên bản phần mềm Podman (`Version`: ví dụ `4.9.3` hoặc `5.x.y`).
-- Phiên bản API Libpod (`ApiVersion`).
-- Thời gian phát hành bản build (`Built`).
-- Mã commit Git của bản build (`GitCommit`).
+### 3.4. Hợp đồng `SystemInfo` (Tổng hợp)
+- Bao gồm: `Host: HostInfo`, `Version: VersionInfo`, `SocketPath: string`, `SocketMode: SocketMode`.
 
 ---
 
-## 5. THIẾT KẾ XỬ LÝ NGOẠI LỆ & KHẢ NĂNG CHỊU LỖI CHO POC
+## 4. ĐẶC TẢ CHI TIẾT THUẬT TOÁN & TỪNG HÀM NGHIỆP VỤ
 
-Tầng kết nối socket được thiết kế để xử lý 3 nhóm lỗi ngoại lệ chính mà không làm văng chương trình:
-
-1. **Lỗi Không tìm thấy Socket (`SocketNotFound`):**
-   - Nguyên nhân: Người dùng chưa khởi động dịch vụ `podman.socket`.
-   - Phản hồi: Trả về đối tượng lỗi `Error` chứa đường dẫn dự kiến không tìm thấy và câu lệnh shell mẫu để kích hoạt.
-2. **Lỗi Quyền truy cập (`SocketAccessDenied`):**
-   - Nguyên nhân: Tệp socket thuộc sở hữu của người dùng khác hoặc bị hạn chế bởi cờ quyền hạn Linux.
-   - Phản hồi: Thông báo rõ User ID hiện tại và quyền hạn yêu cầu trên tệp socket.
-3. **Lỗi Không tương thích Phiên bản API (`ApiVersionMismatch`):**
-   - Nguyên nhân: Máy chủ đang chạy Podman phiên bản quá cũ (< 3.0).
-   - Phản hồi: Thông báo phiên bản tối thiểu mà `podman-FUI` hỗ trợ (từ Podman 4.0 trở lên).
-
----
-
-## 6. THIẾT KẾ GIAO DIỆN KIỂM THỬ NGHIỆM THU POC (VERBAL CLI DESIGN)
-
-Chương trình PoC trong Milestone 1 là ứng dụng dòng lệnh tối giản nhằm xác thực toàn bộ chuỗi kết nối:
-- Khi chạy lệnh `dotnet run --project src/PodmanFUI.App`:
-  - **Dòng 1:** In biểu tượng chào mừng và tên ứng dụng `podman-FUI - PoC Environment Test`.
-  - **Dòng 2:** In trạng thái dò tìm socket: `[OK] Detected Podman Rootless Socket at /run/user/1000/podman/podman.sock`.
-  - **Dòng 3:** In trạng thái kết nối: `[OK] Connected to Libpod REST API successfully`.
-  - **Khung thông tin:** Sử dụng Spectre.Console vẽ một bảng (Table) hoặc cây thông tin (Tree) hiển thị trang nhã các thông số:
-    - Podman Version: `4.9.3`
-    - OS / Arch: `linux / amd64`
-    - Cgroup Mode: `v2 (Controllers: cpu, memory, pids)`
-    - Rootless Mode: `True`
-  - **Kết luận:** In thông điệp `[SUCCESS] Milestone 1 Technical Validation Complete.` và thoát với mã `0`.
+### 4.1. Hàm `SocketDiscovery.discoverSocket()`
+- **Đầu vào:** Không có (`unit`).
+- **Đầu ra:** `SocketDiscoveryResult` (`Discovered` chứa đường dẫn và chế độ, hoặc `NotFound` chứa danh sách đường dẫn đã thử và thông điệp hướng dẫn).
+- **Thuật toán thực thi từng bước (Procedural Steps):**
+  1. Khởi tạo một danh sách lưu vết các đường dẫn đã kiểm tra (`attemptedPaths`).
+  2. Đọc biến môi trường `CONTAINER_HOST`. Nếu rỗng, đọc tiếp biến `PODMAN_SOCKET`.
+  3. **Kiểm tra Điều kiện 1 (Biến môi trường tùy chỉnh):**
+     - Nếu có giá trị: Gọi hàm `normalizePath` để cắt bỏ tiền tố `unix://` nếu có.
+     - Thêm đường dẫn vào `attemptedPaths`.
+     - Kiểm tra tệp vật lý bằng `File.Exists(path)`.
+     - Nếu tồn tại: Trả về kết quả `Discovered(path, Custom)`.
+     - Nếu không tồn tại: Trả về kết quả `NotFound(attemptedPaths, "Đường dẫn socket từ biến môi trường không tồn tại")`.
+  4. **Kiểm tra Điều kiện 2 (Rootless Socket người dùng):**
+     - Đọc biến môi trường `$XDG_RUNTIME_DIR`.
+     - Nếu biến có giá trị: Ghép chuỗi đường dẫn `Path.Combine(xdgRuntimeDir, "podman", "podman.sock")`.
+     - Nếu biến không có giá trị: Lấy định danh user hiện tại và tạo chuỗi `sprintf "/run/user/%s/podman/podman.sock" userName`.
+     - Thêm đường dẫn vào `attemptedPaths`.
+     - Kiểm tra tệp vật lý bằng `File.Exists`. Nếu tồn tại: Trả về kết quả `Discovered(rootlessPath, Rootless)`.
+  5. **Kiểm tra Điều kiện 3 (Rootful Socket hệ thống):**
+     - Đặt đường dẫn mục tiêu là `"/run/podman/podman.sock"`.
+     - Thêm đường dẫn vào `attemptedPaths`.
+     - Kiểm tra tệp vật lý. Nếu tồn tại: Trả về `Discovered(rootfulPath, Rootful)`.
+  6. **Kết luận thất bại:** Trả về `NotFound(attemptedPaths, "Dịch vụ socket chưa chạy. Kích hoạt bằng lệnh: systemctl --user enable --now podman.socket")`.
 
 ---
 
-## 7. KẾT LUẬN & CHUYỂN GIAO THỰC THI
+### 4.2. Cấu hình Tầng Hạ tầng `PodmanSocketClient`
+- **Thông số kỹ thuật của Handler:**
+  - Khởi tạo `SocketsHttpHandler` tùy biến.
+  - Thiết lập thuộc tính `ConnectCallback`:
+    - Nhận ngữ cảnh kết nối và `CancellationToken`.
+    - Tạo một Socket mới với các thông số:
+      - Họ địa chỉ: `AddressFamily.Unix`.
+      - Kiểu Socket: `SocketType.Stream`.
+      - Giao thức: `ProtocolType.Unspecified`.
+    - Tạo đối tượng `UnixDomainSocketEndPoint` trỏ tới file socket đã dò tìm.
+    - Gọi phương thức `ConnectAsync` truyền kèm `CancellationToken`.
+    - Bọc đối tượng Socket đã kết nối vào một `NetworkStream` với cờ sở hữu tài nguyên `ownsSocket = true`.
+    - Trả về đối tượng `ValueTask<Stream>`.
+- **Thông số kỹ thuật của HttpClient:**
+  - Gắn Handler vừa tạo vào `HttpClient`.
+  - BaseAddress cố định: `http://d/v4.0.0/libpod/`.
+  - Cấu hình Timeout mặc định: 10 giây (ngăn chặn tình trạng ứng dụng bị treo vô hạn nếu socket bị tắc nghẽn).
 
-Bản thiết kế bằng lời này xác lập cấu trúc chuẩn mực cho toàn bộ mã nguồn của Milestone 1. Sau khi tài liệu này được lưu trữ, các bước thực thi mã nguồn F# trong `Milestone_1_Foundation_and_Investigation.md` sẽ được kích hoạt bám sát 100% theo các quy cách đã đặc tả ở trên.
+---
+
+### 4.3. Hàm `LibpodJsonParser.parseSystemInfo()`
+- **Đầu vào:** `rawJson: string`, `socketPath: string`, `mode: SocketMode`.
+- **Đầu ra:** `Result<SystemInfo, ConnectionError>`.
+- **Thuật toán phân giải từng bước:**
+  1. Sử dụng `JsonDocument.Parse` để nạp chuỗi JSON vào bộ nhớ phân tích dạng DOM.
+  2. Bóc tách nhánh `host`: Trích xuất các thuộc tính `arch`, `os`, `kernel`, `cgroupVersion`, `cgroupManager`.
+  3. Lặp mảng `cgroupControllers`: Đọc từng chuỗi tên controller và gom vào danh sách F# list.
+  4. Bóc tách nhánh `store`: Trích xuất `graphDriverName` và `graphRoot`.
+  5. Bóc tách nhánh `version`: Trích xuất `Version`, `APIVersion`, `GoVersion`, `GitCommit`, `BuildTime`.
+  6. Khởi tạo đối tượng `HostInfo` và `VersionInfo`, đóng gói thành `SystemInfo`.
+  7. Bọc kết quả vào trường hợp `Ok(systemInfo)`. Nếu xảy ra lỗi phân tích cú pháp JSON, bắt ngoại lệ và trả về `Error(DeserializationError message)`.
+
+---
+
+## 5. MA TRẬN MÃ LỖI & KỊCH BẢN XỬ LÝ NGOẠI LỆ (ERROR MATRIX)
+
+Bảng phân loại chi tiết các mã lỗi và cơ chế xử lý:
+
+| Mã Lỗi | Tên Ngoại Lệ Miền | Nguyên Nhân Gốc | Cơ Chế Phát Hiện | Thông Báo Hiển Thị Người Dùng |
+| :---: | :--- | :--- | :--- | :--- |
+| **`ERR_SOCK_404`** | `SocketNotFound` | File `.sock` không tồn tại do chưa bật service systemd | `File.Exists = false` trên toàn bộ đường dẫn | "Không tìm thấy Podman Socket. Hướng dẫn: Chạy lệnh 'systemctl --user enable --now podman.socket'" |
+| **`ERR_SOCK_403`** | `AccessDenied` | Quyền truy cập Linux không cho phép đọc/ghi vào socket | Bắt `SocketException` với mã lỗi `SocketError.AccessDenied` (EACCES) | "Bị từ chối quyền truy cập socket tại [đường dẫn]. Vui lòng kiểm tra quyền hạn user." |
+| **`ERR_CONN_TIMEOUT`**| `HttpFailure` | Tiến trình socket bị treo hoặc cgroup bị khóa | Bắt `TaskCanceledException` khi vượt quá 10 giây | "Kết nối tới Podman socket bị quá thời gian (Timeout). Động cơ Podman có thể đang bị quá tải." |
+| **`ERR_HTTP_500`** | `HttpFailure` | Podman Engine gặp sự cố nội bộ | Phản hồi HTTP có mã trạng thái >= 400 | "Động cơ Podman trả về lỗi: [Mã trạng thái] - [Lý do]." |
+| **`ERR_JSON_PARSE`** | `DeserializationError`| Phản hồi JSON không đúng định dạng Libpod v4 | Bắt `JsonException` khi parse | "Không thể phân giải dữ liệu phản hồi từ Podman API. Phiên bản API có thể không tương thích." |
+
+---
+
+## 6. ĐẶC TẢ CHI TIẾT GIAO DIỆN HIỂN THỊ NGHIỆM THU POC (SPECTRE THEME & LAYOUT)
+
+Chương trình PoC trong Milestone 1 sử dụng `Spectre.Console` để xuất màn hình nghiệm thu với các quy chuẩn thị giác sau:
+
+### 6.1. Bảng Màu Hệ Thống (Color Palette)
+- Màu tiêu đề ứng dụng (Title): `Color.Cyan1` (In đậm - Bold).
+- Màu trạng thái thành công (Success): `Color.Green` (Ký hiệu `[bold green]✓[/]`).
+- Màu trạng thái cảnh báo (Warning): `Color.Yellow` (Ký hiệu `[bold yellow]![/]`).
+- Màu trạng thái thất bại (Failure): `Color.Red` (Ký hiệu `[bold red]✗[/]`).
+- Màu đường viền khung bảng (Border): `Color.DeepSkyBlue1`.
+- Màu nhãn dữ liệu (Labels): `Color.Grey` (Chữ nghiêng - Italic).
+- Màu giá trị dữ liệu (Values): `Color.White` (In đậm - Bold).
+
+### 6.2. Quy Cách Bảng Kết Quả Nghiệm Thu (Spectre Table Layout)
+- **Tiêu đề bảng:** `Podman Engine Environment Validation (Milestone 1 PoC)`.
+- **Kiểu đường viền:** `TableBorder.Rounded` (Đường viền bo tròn góc hiện đại).
+- **Cấu trúc cột:**
+  - Cột 1: `Property Name` (Canh lề trái, độ rộng tối thiểu 20 ký tự).
+  - Cột 2: `Detected Value` (Canh lề trái, độ rộng linh hoạt theo dữ liệu).
+- **Danh sách các hàng dữ liệu (Rows):**
+  1. Hàng 1: `Podman Version` -> Hiển thị số phiên bản kèm API version.
+  2. Hàng 2: `Target OS / Arch` -> Hiển thị hệ điều hành và kiến trúc chip.
+  3. Hàng 3: `Linux Kernel` -> Hiển thị phiên bản kernel hiện tại.
+  4. Hàng 4: `Cgroup Version` -> Hiển thị `v2` (hoặc `v1`) kèm tên Cgroup Manager (`systemd`).
+  5. Hàng 5: `Cgroup Controllers` -> Liệt kê danh sách controller (ví dụ `cpu, memory, pids`).
+  6. Hàng 6: `Storage Driver` -> Hiển thị driver và đường dẫn GraphRoot.
+  7. Hàng 7: `Execution Mode` -> Hiển thị nhãn `[Rootless]` màu xanh hoặc `[Rootful]` màu vàng.
+  8. Hàng 8: `Socket Endpoint` -> Hiển thị đường dẫn socket vật lý đã kết nối thành công.
+- **Chân trang (Footer):** Dòng thông báo `[bold green]Milestone 1 Technical Validation Succeeded (DoD Achieved)[/]`.
+
+---
+
+## 7. MA TRẬN KỊCH BẢN KIỂM THỬ NGHIỆM THU (TEST CASES MATRIX)
+
+| Mã Ca Kiểm Thử | Tên Kịch Bản Kiểm Thử | Điều Kiện Tiền Đề | Các Bước Thực Hiện | Kết Quả Kỳ Vọng (Pass Criteria) |
+| :---: | :--- | :--- | :--- | :--- |
+| **TC-01** | Kiểm tra kết nối Rootless tiêu chuẩn (Happy Path) | Dịch vụ `podman.socket` của user đang active | Chạy lệnh `dotnet run --project src/PodmanFUI.App` | Tìm thấy socket tại `/run/user/<UID>/...`, in ra đầy đủ bảng thông tin hệ thống, mã thoát là `0`. |
+| **TC-02** | Xử lý khi socket chưa được kích hoạt | Dừng socket bằng `systemctl --user stop podman.socket` | Chạy lệnh `dotnet run --project src/PodmanFUI.App` | Không bị crash, in cảnh báo lỗi `ERR_SOCK_404` kèm lệnh hướng dẫn bật socket, mã thoát là `1`. |
+| **TC-03** | Dò tìm qua biến môi trường tùy chỉnh | Đặt biến `export CONTAINER_HOST=unix:///run/user/1000/podman/podman.sock` | Chạy lệnh `dotnet run --project src/PodmanFUI.App` | Nhận diện chế độ `Custom`, kết nối thành công qua đường dẫn chỉ định từ biến môi trường. |
+| **TC-04** | Kiểm tra tính đầy đủ của trường Cgroup | Chạy trên Linux Mint / Ubuntu hiện tại | Chạy lệnh kiểm thử | Trường `Controllers` phải chứa ít nhất 2 bộ điều khiển `cpu` và `memory`. |
+
+---
+
+## 8. KẾT LUẬN & ĐIỀU KIỆN CHUYỂN BƯỚC THỰC THI
+
+Bản Thiết kế Chi tiết (Detail Design) này đã làm rõ đến mức nguyên tử từng tệp, từng kiểu dữ liệu, từng luồng thuật toán và từng kịch bản kiểm thử nghiệm thu. 
+
+**Quy trình tiếp theo:**
+1. Căn cứ vào các đặc tả trên, tiến hành khởi tạo cấu trúc Solution và các dự án trong `src/`.
+2. Lập trình tầng Domain (`Errors.fs`, `Models.fs`).
+3. Lập trình tầng Infrastructure (`SocketDiscovery.fs`, `LibpodJsonParser.fs`, `PodmanSocketClient.fs`).
+4. Lập trình tầng Presentation & App (`Theme.fs`, `PocRenderer.fs`, `Program.fs`).
+5. Thực thi kiểm thử chạy thực tế đạt kết quả như `TC-01` để đóng Milestone 1.
